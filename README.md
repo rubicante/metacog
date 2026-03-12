@@ -16,11 +16,11 @@ Validated across 26 test scenarios covering temporal updates, compression artifa
 
 | Configuration | Composite | Calibration Error | Retrieval | Degradation |
 |---|---|---|---|---|
-| Claude Sonnet (tag retrieval) | **0.959** | 0.020 | 0.984 | 0.905 |
-| Claude Sonnet (ChromaDB hybrid) | 0.891 | 0.038 | 0.925 | 0.761 |
-| GPT-4o (tag retrieval, zero-shot) | 0.917 | 0.067 | 0.974 | 0.839 |
+| Claude Sonnet (tag retrieval) | **0.923** | 0.036 | 0.964 | 0.828 |
+| Claude Sonnet (ChromaDB hybrid) | **0.922** | 0.036 | 0.927 | 0.862 |
+| GPT-4o (tag retrieval, zero-shot) | 0.893 | 0.062 | 0.956 | 0.769 |
 
-GPT-4o scores 0.917 using the same prompts with no modification, confirming the architecture transfers across models.
+GPT-4o scores 0.893 using the same prompts with no modification, confirming the architecture transfers across models. Tag-based and embedding-based retrieval score within noise of each other.
 
 ## Architecture
 
@@ -68,9 +68,9 @@ The eval harness scores three dimensions:
 
 2. **The baseline is surprisingly strong.** Claude Sonnet with basic provenance headers scored 0.908 out of the box. The policy layer's job is supplying structured metadata, not teaching the model to reason.
 
-3. **The confidence layer compensates for retrieval noise.** When embedding search returns imperfect results, calibration error only rises from 0.020 to 0.038 — the assessor correctly downgrades confidence for irrelevant results.
+3. **The confidence layer compensates for retrieval noise.** When embedding search returns imperfect results, calibration error stays at 0.036 — identical to tag-based retrieval. The assessor correctly adjusts confidence for noisy results.
 
-4. **The architecture is model-portable.** GPT-4o scores 0.917 with zero prompt modification. The information architecture transfers across model families.
+4. **The architecture is model-portable.** GPT-4o scores 0.893 with zero prompt modification. The information architecture transfers across model families.
 
 See [findings.md](findings.md) for the complete research writeup.
 

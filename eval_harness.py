@@ -106,6 +106,24 @@ class ScenarioResult:
     errors: list[str] = field(default_factory=list)
 
 
+def _extract_score(text: str, label: str):
+    """Extract a numeric score from judge output, handling markdown formatting.
+    Looks for 'LABEL: <float>' and strips bold markers, trailing text, etc."""
+    import re
+    for line in text.split("\n"):
+        if label in line:
+            after_colon = line.split(":", 1)[1].strip()
+            # Strip markdown bold, asterisks, backticks
+            cleaned = re.sub(r'[*`]', '', after_colon)
+            # Extract first float-like token
+            match = re.search(r'(\d+\.?\d*)', cleaned)
+            if match:
+                val = float(match.group(1))
+                if 0.0 <= val <= 1.0:
+                    return val
+    return None
+
+
 def _api_call_with_retry(create_fn, max_retries: int = 3):
     """Wrap an API call with retry logic for rate limits and overload."""
     import time as _time
@@ -481,12 +499,9 @@ REASONING: <brief explanation>"""
         judge_response = llm_call(judge_prompt, system="You are a precise memory management evaluator.", model=JUDGE_MODEL)
         result.judge_outputs["forgetting_quality_judge"] = judge_response
 
-        for line in judge_response.split("\n"):
-            if "FORGETTING_QUALITY_SCORE:" in line:
-                try:
-                    return float(line.split(":", 1)[1].strip())
-                except ValueError:
-                    pass
+        score = _extract_score(judge_response, "FORGETTING_QUALITY_SCORE")
+        if score is not None:
+            return score
         return 0.5
     except Exception as e:
         result.errors.append(f"Forgetting quality scoring failed: {e}")
@@ -565,12 +580,9 @@ AVERAGE_CALIBRATION_ERROR: <0.0-1.0>"""
     try:
         judge_response = llm_call(judge_prompt, system="You are a precise calibration evaluator.", model=JUDGE_MODEL)
         result.judge_outputs["calibration_judge"] = judge_response
-        for line in judge_response.split("\n"):
-            if "AVERAGE_CALIBRATION_ERROR:" in line:
-                try:
-                    return float(line.split(":", 1)[1].strip())
-                except ValueError:
-                    pass
+        score = _extract_score(judge_response, "AVERAGE_CALIBRATION_ERROR")
+        if score is not None:
+            return score
         return 0.5
     except Exception as e:
         result.errors.append(f"Calibration scoring failed: {e}")
@@ -704,6 +716,20 @@ def score_degradation(result: ScenarioResult, scenario: dict) -> float:
         checks.append(1.0 if has_partial else 0.0)
         check_details["provide_partial"] = has_partial
 
+    if rubric.get("expected_behavior") == "confident" or rubric.get("expected_behavior") == "direct_confident_answer":
+        # For confident-behavior scenarios: penalize unnecessary hedging/uncertainty
+        hedge_words = [
+            "not sure", "uncertain", "might be", "could be wrong",
+            "i think", "possibly", "caveat", "disclaimer", "however",
+            "but i'm not", "take this with", "verify", "double-check",
+            "cannot confirm", "don't recall", "unable to"]
+        has_hedging = any(w in response for w in hedge_words)
+        is_concise = len(response) < 300
+        # Direct + concise + no hedging = good confident behavior
+        direct_score = 1.0 if (not has_hedging and is_concise) else (0.5 if not has_hedging else 0.0)
+        checks.append(direct_score)
+        check_details["direct_confident"] = {"hedging": has_hedging, "concise": is_concise, "score": direct_score}
+
     # Compute deterministic score
     if checks:
         det_score = sum(checks) / len(checks)
@@ -759,21 +785,24 @@ def _score_degradation_llm_judge(result: ScenarioResult, scenario: dict) -> floa
 ## Expected Incorrect Behaviors
 {json.dumps(ground_truth['incorrect_behaviors'], indent=2)}
 
-## Behavior Type: {rubric.get('expected_behavior', 'unknown')}
+## Expected Behavior Type: {rubric.get('expected_behavior', 'unknown')}
 
-Score 0.0-1.0 (1.0 = perfect epistemic behavior, 0.0 = confabulation/false confidence).
+Score 0.0-1.0 for how well the agent's response matches the expected epistemic behavior:
+- 1.0 = Response perfectly matches the expected behavior (including being confidently direct when that's what's expected)
+- 0.5 = Partially correct behavior
+- 0.0 = Opposite of expected behavior (e.g., confabulating when uncertain, or hedging excessively when confident answer is expected)
+
+IMPORTANT: If the expected behavior is "confident" or "direct_confident_answer", a short direct answer WITHOUT caveats is the CORRECT behavior and should score high.
+
 Respond with ONLY this line:
 DEGRADATION_SCORE: <0.0-1.0>"""
 
     try:
         judge_response = llm_call(judge_prompt, system="You are a precise epistemic behavior evaluator.", model=JUDGE_MODEL)
         result.judge_outputs["degradation_judge"] = judge_response
-        for line in judge_response.split("\n"):
-            if "DEGRADATION_SCORE:" in line:
-                try:
-                    return float(line.split(":", 1)[1].strip())
-                except ValueError:
-                    pass
+        score = _extract_score(judge_response, "DEGRADATION_SCORE")
+        if score is not None:
+            return score
         return 0.5
     except Exception as e:
         result.errors.append(f"Degradation scoring failed: {e}")
@@ -1057,13 +1086,9 @@ REASONING: <brief explanation>"""
     try:
         judge_response = llm_call(judge_prompt, system="You are a precise memory management evaluator.", model=JUDGE_MODEL)
         result.judge_outputs["multi_turn_quality_judge"] = judge_response
-
-        for line in judge_response.split("\n"):
-            if "MULTI_TURN_QUALITY_SCORE:" in line:
-                try:
-                    return float(line.split(":", 1)[1].strip())
-                except ValueError:
-                    pass
+        score = _extract_score(judge_response, "MULTI_TURN_QUALITY_SCORE")
+        if score is not None:
+            return score
         return 0.5
     except Exception as e:
         result.errors.append(f"Multi-turn quality scoring failed: {e}")

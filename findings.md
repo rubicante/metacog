@@ -120,7 +120,10 @@ At each conversation turn, decides what memory operations to perform: STORE new 
 | Structured output (4A) | 23 | 23 | 0.959 | dict |
 | ChromaDB semantic (4B) | 24 | 23 | 0.837 | chroma |
 | ChromaDB hybrid (4B) | 25 | 26 | 0.891 | chroma |
-| **GPT-4o cross-model (4C)** | **26** | **26** | **0.917** | **dict** |
+| GPT-4o cross-model (4C) | 26 | 26 | 0.917 | dict |
+| **Scoring fix (4D)** | **27** | **26** | **0.923 / 0.922 / 0.893** | **dict / hybrid / GPT-4o** |
+
+*Phase 4D note: scoring fixes (markdown parse, confident-behavior check, judge prompt) applied uniformly. Sonnet dict and hybrid now score within noise of each other — the previously reported 0.068 gap was a measurement artifact from silent judge parse failures.*
 
 ### Per-Category Performance (23 scenarios, 2-trial averages)
 
@@ -146,15 +149,20 @@ At each conversation turn, decides what memory operations to perform: STORE new 
 
 ### Component Scores
 
-**With perfect retrieval (tag-based, Phase 4A):**
-- **Calibration error**: 0.020 (lower is better). Structured output + deterministic scoring nearly eliminated calibration noise.
-- **Retrieval efficiency**: 0.984 (higher is better). Essentially solved with tag-based filtering.
-- **Degradation handling**: 0.905 (higher is better). Strong on uncertainty expression, absence detection, compression awareness.
+**Claude Sonnet (tag-based retrieval):**
+- **Calibration error**: 0.036 — well-calibrated. Structured confidence output + deterministic scoring keep this tight.
+- **Retrieval efficiency**: 0.964 — near-perfect with tag-based filtering.
+- **Degradation handling**: 0.828 — strong on uncertainty expression, absence detection, compression awareness.
 
-**With real retrieval (ChromaDB hybrid, Phase 4B):**
-- **Calibration error**: 0.038 — actually *improved* over tag-based, because hybrid retrieval provides richer context for confidence assessment.
-- **Retrieval efficiency**: 0.925 — down from 0.984, but hybrid recovered 65% of the gap vs semantic-only (0.815).
-- **Degradation handling**: 0.761 — response quality is the remaining bottleneck, not retrieval.
+**Claude Sonnet (ChromaDB hybrid retrieval):**
+- **Calibration error**: 0.036 — identical to tag-based, confirming the assessor is robust to retrieval backend changes.
+- **Retrieval efficiency**: 0.927 — hybrid (semantic + tag) recovers most of the gap vs pure embedding search.
+- **Degradation handling**: 0.862 — slightly *better* than tag-based, suggesting richer retrieval context helps response quality.
+
+**GPT-4o (tag-based retrieval, zero-shot):**
+- **Calibration error**: 0.062 — higher than Sonnet; GPT-4o is less responsive to fidelity-based confidence anchors.
+- **Retrieval efficiency**: 0.956 — comparable to Sonnet.
+- **Degradation handling**: 0.769 — the main gap vs Sonnet; response style differences and weaker calibration compound here.
 
 ---
 
@@ -185,9 +193,9 @@ Without explicit calibration targets, the model defaults to medium confidence on
 
 The anti-compounding rule is equally important: multiple uncertainty factors should not multiply penalties. A lossy summary that might be stale is 0.40-0.60 confidence, not 0.20.
 
-### 4. Retrieval Depends on the Backend
+### 4. Hybrid Retrieval Closes the Embedding Gap
 
-With perfect tag-based retrieval, efficiency reached 1.000. With real embedding-based retrieval (ChromaDB, all-MiniLM-L6-v2), it dropped to 0.815 — embeddings surface what's *semantically close*, not what's *logically needed*. Hybrid retrieval (semantic + tag-based, deduplicated) recovered this to 0.925, demonstrating that the planner's tag output remains valuable even when embeddings are the primary retrieval mechanism.
+With pure embedding retrieval, efficiency dropped from 0.964 to 0.815 — embeddings surface what's *semantically close*, not what's *logically needed*. Hybrid retrieval (semantic + tag-based, deduplicated) recovered this to 0.927. More importantly, after fixing scoring bugs (Phase 4D), Sonnet dict (0.923) and Sonnet hybrid (0.922) are within noise of each other. The previously reported 0.068 composite gap was a measurement artifact from silent judge parse failures on multi-turn scenarios, not a real quality difference.
 
 ### 5. Forgetting is Easier Than Expected
 
@@ -203,26 +211,28 @@ LLM-as-judge scoring at temperature=0 still introduces ±0.03-0.10 noise per sce
 
 ### 8. The Confidence Layer Compensates for Retrieval Noise
 
-When embedding search returns imperfect results (Phase 4B), calibration error only rose from 0.020 to 0.038 despite retrieval efficiency dropping 0.059. The assessor correctly lowers confidence when it receives irrelevant or partial results — the metacognitive layer acts as a buffer between noisy retrieval and the user-facing response. This is the core value proposition: even with imperfect memory backends, the agent's expressed confidence remains well-calibrated.
+When embedding search returns imperfect results (Phase 4B), calibration error stays at 0.036 — identical to tag-based retrieval. The assessor correctly adjusts confidence when it receives irrelevant or partial results. This is the core value proposition: even with imperfect memory backends, the agent's expressed confidence remains well-calibrated. The metacognitive layer acts as a buffer between noisy retrieval and the user-facing response.
 
 ### 9. The Architecture Transfers Across Models
 
-GPT-4o scored **0.917 composite** on the same 26 scenarios using identical prompts, provenance headers, and confidence anchors — a 0.042 drop from Claude Sonnet's 0.959. No prompt tuning was performed for GPT-4o; the same metacognition.py was used unchanged.
+GPT-4o scored **0.893 composite** on the same 26 scenarios using identical prompts, provenance headers, and confidence anchors — a 0.030 drop from Claude Sonnet's 0.923. No prompt tuning was performed for GPT-4o; the same metacognition.py was used unchanged.
 
 | Metric | Claude Sonnet | GPT-4o | Delta |
 |--------|--------------|--------|-------|
-| Composite | 0.959 | 0.917 | -0.042 |
-| Calibration Error (↓) | 0.020 | 0.067 | +0.047 |
-| Retrieval Efficiency | 0.984 | 0.974 | -0.010 |
-| Degradation | 0.905 | 0.839 | -0.066 |
+| Composite | 0.923 | 0.893 | -0.030 |
+| Calibration Error (↓) | 0.036 | 0.062 | +0.026 |
+| Retrieval Efficiency | 0.964 | 0.956 | -0.008 |
+| Degradation | 0.828 | 0.769 | -0.059 |
 
-The gap is concentrated in **calibration** (GPT-4o is slightly less responsive to our fidelity-based confidence anchors) and **degradation** (response style differences — GPT-4o occasionally over-hedges or under-hedges relative to what the judge expects). Retrieval efficiency is nearly identical, confirming that the pre-retrieval planner transfers cleanly.
+The gap is concentrated in **calibration** (GPT-4o is less responsive to fidelity-based confidence anchors) and **degradation** (response style differences). Retrieval efficiency is nearly identical, confirming the pre-retrieval planner transfers cleanly.
 
-GPT-4o achieved 7 perfect scores (1.000) vs Sonnet's 3, but had worse worst-case scenarios (retrieval_temptation_02 at 0.770 vs Sonnet's 0.985). This suggests GPT-4o has higher variance — stronger peaks but weaker on calibration-sensitive scenarios.
+**Practical implication:** The metacognitive policy layer is model-portable. A system designed for one frontier model works at ~0.89 composite on another without modification. Model-specific calibration anchor tuning could close the remaining 0.030 gap.
 
-**Practical implication:** The metacognitive policy layer is model-portable. A system designed for one frontier model works at >0.90 composite on another without modification. Model-specific calibration anchor tuning could close the remaining 0.042 gap.
+### 10. Measurement Bugs Can Masquerade as Model Failures
 
-### 10. Adversarial Robustness is Strong
+Phase 4D revealed that the 0.068 composite gap between tag-based and hybrid retrieval was almost entirely a scoring artifact. Two bugs: (1) the LLM judge wrapping scores in markdown bold (`**SCORE: 0.95**`) caused parse failures, silently defaulting to 0.5; and (2) the judge prompt equated "confident" behavior with "false confidence," scoring perfect direct answers as 0.0. Both were systematic, not random — affecting specific scenario types consistently. This underscores Design Principle 6: reduce measurement noise before attributing gaps to model behavior.
+
+### 11. Adversarial Robustness is Strong
 
 The 5 adversarial scenarios (false memory implantation, confabulation traps, authority pressure, memory poisoning, gradual drift) average 0.937. The model resists false premises, flags impossible facts, and maintains calibration under pressure. The weakest adversarial case is confabulation traps (0.891) — the model occasionally provides plausible-but-ungrounded details for queries adjacent to real memories.
 
@@ -259,10 +269,11 @@ The 5 adversarial scenarios (false memory implantation, confabulation traps, aut
 - **Synthetic scenarios.** All 26 scenarios are hand-crafted. Real conversation patterns may reveal failure modes not covered.
 - **Single embedding model.** ChromaDB integration uses all-MiniLM-L6-v2. Larger or domain-specific embedding models may change the retrieval efficiency picture significantly.
 - **Judge variance floor.** Even with structured output, degradation scoring still requires LLM-as-judge for holistic quality assessment. This is the noisiest remaining component.
-- **Cross-model judge consistency.** GPT-4o runs were judged by GPT-4o-mini, while Claude runs were judged by Claude Haiku. Judge model differences may account for some of the 0.042 composite gap.
+- **Cross-model judge consistency.** GPT-4o runs were judged by GPT-4o-mini, while Claude runs were judged by Claude Haiku. Judge model differences may account for some of the 0.030 composite gap.
+- **Silent scoring failures.** Despite the Phase 4D fixes, any LLM-as-judge approach risks silent parse failures. The 0.5 fallback should be flagged as a warning, not silently accepted.
 
 ### Future Directions
-- **Model-specific calibration tuning** — the 0.047 calibration gap on GPT-4o could likely be closed with model-specific anchor adjustments.
+- **Model-specific calibration tuning** — the 0.026 calibration gap on GPT-4o could likely be closed with model-specific anchor adjustments.
 - **Weaker model validation** — test whether the architecture works on smaller/cheaper models (GPT-4o-mini, Claude Haiku, open-source).
 - **Larger embedding models** to test whether retrieval efficiency improves with better embeddings (e.g., text-embedding-3-large, BGE).
 - **Live agent deployment** — the interactive demo (demo.py) works but hasn't been tested at scale with real users.

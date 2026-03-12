@@ -291,7 +291,32 @@ Added Component 5 (Turn Memory Manager) to metacognition.py — at each conversa
 | Phase 4A structured | 23 | 0.959 | dict |
 | Phase 4B chroma (semantic) | 23 | 0.837 | chroma |
 | Phase 4B hybrid | 26 | 0.891 | chroma hybrid |
-| **Phase 4C GPT-4o** | **26** | **0.917** | **dict** |
+| Phase 4C GPT-4o | 26 | 0.917 | dict |
+| **Phase 4D scoring fix** | **26** | **see below** | **all** |
+
+---
+
+## Phase 4D: Degradation Score Investigation
+
+### Root Causes Found
+1. **Markdown parse failures** — The LLM judge wraps scores in bold (`**SCORE: 0.95**`). The parser tried `float("0.95**")` → ValueError → silent fallback to 0.5. Affected all multi-turn scenarios and forgetting_bloat on hybrid runs.
+2. **Misaligned judge prompt** — For "confident" expected behavior, the judge prompt said `0.0 = confabulation/false confidence`, causing it to score direct confident answers as 0.0. The `stakes_low_01` scenario scored 0.000 despite a perfect one-line response.
+
+### Fixes
+1. **`_extract_score()` helper** — Strips markdown bold, asterisks, backticks before parsing. Regex extracts first float in 0.0-1.0 range. Replaced all 4 parse sites.
+2. **`direct_confident` keyword check** — For scenarios where expected behavior is "confident" or "direct_confident_answer", deterministic check: penalize hedging, reward concise direct answers. Removes judge dependency for this scenario class.
+3. **Improved judge prompt** — Clarified that confident direct answers score HIGH when that's the expected behavior.
+
+### Results (all three configs re-run with same scoring code)
+
+| Config | Before fix | After fix | Delta |
+|--------|-----------|-----------|-------|
+| Sonnet dict | 0.959 | **0.923** | -0.036 (stricter judge) |
+| Sonnet hybrid | 0.891 | **0.922** | +0.031 (parse fix) |
+| GPT-4o dict | 0.917 | **0.893** | -0.024 (stricter judge) |
+
+### Key Finding
+**The hybrid retrieval gap was a measurement artifact.** Sonnet dict (0.923) ≈ Sonnet hybrid (0.922). The 0.068 gap we previously measured was almost entirely from silent parse failures on multi-turn judge outputs, not from real model quality differences. With correct scoring, embedding-based hybrid retrieval matches tag-based retrieval within noise.
 
 ---
 
