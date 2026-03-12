@@ -121,9 +121,11 @@ At each conversation turn, decides what memory operations to perform: STORE new 
 | ChromaDB semantic (4B) | 24 | 23 | 0.837 | chroma |
 | ChromaDB hybrid (4B) | 25 | 26 | 0.891 | chroma |
 | GPT-4o cross-model (4C) | 26 | 26 | 0.917 | dict |
-| **Scoring fix (4D)** | **27** | **26** | **0.923 / 0.922 / 0.893** | **dict / hybrid / GPT-4o** |
+| Scoring fix (4D) | 27 | 26 | 0.923 / 0.922 / 0.893 | dict / hybrid / GPT-4o |
+| **Ablation (5A)** | **28** | **21** | **0.852 (bare) — 0.923 (full)** | **dict** |
 
-*Phase 4D note: scoring fixes (markdown parse, confident-behavior check, judge prompt) applied uniformly. Sonnet dict and hybrid now score within noise of each other — the previously reported 0.068 gap was a measurement artifact from silent judge parse failures.*
+*Phase 4D: scoring fixes applied uniformly — dict/hybrid gap was a measurement artifact.*
+*Phase 5A: ablation on 21 standard scenarios. Full scaffolding adds 0.071 over bare model; the assessor accounts for nearly all of it.*
 
 ### Per-Category Performance (23 scenarios, 2-trial averages)
 
@@ -168,18 +170,18 @@ At each conversation turn, decides what memory operations to perform: STORE new 
 
 ## Key Findings
 
-### 1. Information Architecture > Prompt Engineering
+### 1. Information Architecture Matters Less Than We Thought
 
-The most impactful changes were to *what information the model sees*, not *how the prompts are worded*:
+Our iterative experiments (Phases 1-3) showed large gains from provenance headers (+0.019), confidence anchors (+0.071), and directive labels (+0.009). But **Phase 5A ablation revealed these were confounded with the assessor.**
 
-- Adding compression ratios to provenance headers: +0.019 composite
-- Adding confidence anchors by fidelity level: +0.071 composite
-- Adding directive labels ("VERBATIM — high confidence"): +0.009 composite
-- Adding original content lengths: measurably improved compression awareness
+When we strip components individually:
+- Removing provenance headers: **-0.006 composite** (within noise)
+- Removing confidence anchors: **-0.005 composite** (within noise)
+- Removing the assessor: **-0.107 composite** (the real driver)
 
-By contrast, prompt wording changes (anti-hedging instructions, response formatting) had smaller and less stable effects (+0.004 to +0.007), and some caused regressions.
+The model infers memory quality from raw content nearly as well as from annotated metadata. The anchors and headers helped during iterative development because they improved the *assessor's* output, not the model's understanding of memory quality. The structured confidence assessment (via tool_use) is the actual mechanism.
 
-**Practical implication:** If you're building a memory-augmented LLM agent, invest in the metadata schema (what the model knows about each memory) before investing in prompt engineering.
+**Revised practical implication:** If you're building a memory-augmented LLM agent, invest in a structured confidence assessment step. Provenance metadata is nice but optional — the model already reads between the lines.
 
 ### 2. The Baseline is Surprisingly Strong
 
@@ -228,7 +230,13 @@ The gap is concentrated in **calibration** (GPT-4o is less responsive to fidelit
 
 **Practical implication:** The metacognitive policy layer is model-portable. A system designed for one frontier model works at ~0.89 composite on another without modification. Model-specific calibration anchor tuning could close the remaining 0.030 gap.
 
-### 10. Measurement Bugs Can Masquerade as Model Failures
+### 10. The Model's Latent Metacognition is Strong
+
+Phase 5A ablation: strip all scaffolding (no planner, no assessor, no provenance, no response instructions) and the model scores **0.852 composite** — only 0.071 below the full pipeline. The model already has strong metacognitive instincts: it recognizes when memories are incomplete, hedges appropriately on lossy summaries, and refuses to confabulate. The scaffolding's job is narrower than we assumed — it's primarily about *calibrating expressed confidence* (the assessor), not about teaching the model to reason about memory quality.
+
+The planner actively hurts performance (-0.011 when removed), and provenance + anchors contribute ~0.005 each. The only load-bearing scaffolding component is the structured confidence assessor.
+
+### 11. Measurement Bugs Can Masquerade as Model Failures
 
 Phase 4D revealed that the 0.068 composite gap between tag-based and hybrid retrieval was almost entirely a scoring artifact. Two bugs: (1) the LLM judge wrapping scores in markdown bold (`**SCORE: 0.95**`) caused parse failures, silently defaulting to 0.5; and (2) the judge prompt equated "confident" behavior with "false confidence," scoring perfect direct answers as 0.0. Both were systematic, not random — affecting specific scenario types consistently. This underscores Design Principle 6: reduce measurement noise before attributing gaps to model behavior.
 

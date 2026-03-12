@@ -32,6 +32,7 @@ from metacognition import (
     build_pre_retrieval_prompt,
     parse_retrieval_plan,
     format_memory_context,
+    format_memory_raw,
     build_post_retrieval_prompt,
     parse_confidence_assessment,
     parse_structured_confidence,
@@ -74,6 +75,10 @@ def _anthropic_tool_to_openai(tool: dict) -> dict:
             "parameters": tool["input_schema"],
         },
     }
+
+# Ablation mode — set of components to remove
+# Valid values: "planner", "anchors", "provenance", "assessor", "bare"
+ABLATIONS = set()
 
 # Scenarios consistently >0.95 that can be skipped in quick mode
 STABLE_SCENARIOS = {
@@ -266,15 +271,16 @@ def run_scenario(scenario: dict) -> ScenarioResult:
     query = scenario["query"]
 
     # 2. Pre-retrieval planning
-    if QUICK_MODE:
-        # Skip planner — use rubric tags directly (retrieval is a solved component)
+    if "bare" in ABLATIONS or "planner" in ABLATIONS or QUICK_MODE:
+        # Skip planner — use rubric tags directly
         rubric_tags = scenario.get("rubric", {}).get("retrieval", {}).get("relevant_tags", [])
         result.retrieval_plan = {
             "decision": "RETRIEVE", "relevant_tags": rubric_tags,
-            "relevant_sessions": [], "needed_info": "quick mode",
+            "relevant_sessions": [], "needed_info": "ablated" if ABLATIONS else "quick mode",
             "confidence_before": "low", "stakes": "medium",
         }
-        result.judge_outputs["plan_raw"] = "[QUICK MODE: skipped planner, used rubric tags]"
+        label = "ABLATED" if ABLATIONS else "QUICK MODE"
+        result.judge_outputs["plan_raw"] = f"[{label}: skipped planner, used rubric tags]"
     else:
         try:
             plan_prompt = build_pre_retrieval_prompt(query, store)
@@ -317,33 +323,90 @@ def run_scenario(scenario: dict) -> ScenarioResult:
         pass
     # PROCEED_WITHOUT: skip retrieval entirely
 
-    # 4. Format memories with provenance
-    memory_context = format_memory_context(retrieved)
+    # 4. Format memories (with or without provenance)
+    if "bare" in ABLATIONS or "provenance" in ABLATIONS:
+        memory_context = format_memory_raw(retrieved)
+    else:
+        memory_context = format_memory_context(retrieved)
 
     # 5. Post-retrieval confidence assessment (structured via tool_use)
-    try:
-        assess_prompt = build_post_retrieval_prompt(query, memory_context, result.retrieval_plan)
-        tool_input = llm_call_with_tool(
-            assess_prompt,
-            tool=get_confidence_assessment_tool(),
-            system="You are a metacognitive confidence assessor. Use the provided tool to report your assessment."
-        )
-        result.confidence_assessment = parse_structured_confidence(tool_input)
-        result.judge_outputs["assessment_raw"] = json.dumps(tool_input, indent=2)
-        result.judge_outputs["assessment_structured"] = tool_input
-    except Exception as e:
-        result.errors.append(f"Confidence assessment failed: {e}")
+    if "bare" in ABLATIONS or "assessor" in ABLATIONS:
+        # Skip assessor — no confidence guidance for the response
         result.confidence_assessment = {"confidence": 0.5, "claim_confidences": [],
-                                         "epistemic_status": "uncertain",
-                                         "recommended_framing": "express uncertainty"}
+                                         "epistemic_status": "unguided",
+                                         "recommended_framing": "use your own judgment"}
+        result.judge_outputs["assessment_raw"] = "[ABLATED: no assessor]"
+    elif "anchors" in ABLATIONS:
+        # Run assessor but strip confidence anchors from the prompt
+        assess_prompt = build_post_retrieval_prompt(query, memory_context, result.retrieval_plan)
+        # Remove the anchors section
+        anchor_start = assess_prompt.find("Confidence anchors")
+        anchor_end = assess_prompt.find("Anti-compounding rule")
+        if anchor_start > 0 and anchor_end > anchor_start:
+            assess_prompt = assess_prompt[:anchor_start] + assess_prompt[anchor_end:]
+        try:
+            tool_input = llm_call_with_tool(
+                assess_prompt,
+                tool=get_confidence_assessment_tool(),
+                system="You are a metacognitive confidence assessor. Use the provided tool to report your assessment."
+            )
+            result.confidence_assessment = parse_structured_confidence(tool_input)
+            result.judge_outputs["assessment_raw"] = json.dumps(tool_input, indent=2)
+            result.judge_outputs["assessment_structured"] = tool_input
+        except Exception as e:
+            result.errors.append(f"Confidence assessment failed: {e}")
+            result.confidence_assessment = {"confidence": 0.5, "claim_confidences": [],
+                                             "epistemic_status": "uncertain",
+                                             "recommended_framing": "express uncertainty"}
+    else:
+        try:
+            assess_prompt = build_post_retrieval_prompt(query, memory_context, result.retrieval_plan)
+            tool_input = llm_call_with_tool(
+                assess_prompt,
+                tool=get_confidence_assessment_tool(),
+                system="You are a metacognitive confidence assessor. Use the provided tool to report your assessment."
+            )
+            result.confidence_assessment = parse_structured_confidence(tool_input)
+            result.judge_outputs["assessment_raw"] = json.dumps(tool_input, indent=2)
+            result.judge_outputs["assessment_structured"] = tool_input
+        except Exception as e:
+            result.errors.append(f"Confidence assessment failed: {e}")
+            result.confidence_assessment = {"confidence": 0.5, "claim_confidences": [],
+                                             "epistemic_status": "uncertain",
+                                             "recommended_framing": "express uncertainty"}
 
     # 6. Generate final response
     try:
-        response_prompt = build_response_prompt(query, memory_context, result.confidence_assessment)
-        result.agent_response = llm_call(
-            response_prompt,
-            system="You are a helpful AI assistant with access to a memory system. Follow the epistemic guidance provided."
-        )
+        if "bare" in ABLATIONS:
+            # Minimal prompt — raw memories + query, no epistemic guidance
+            response_prompt = (
+                f"You are an AI assistant. A user has asked a question. "
+                f"You have some stored memories that may be relevant.\n\n"
+                f"## Memories\n{memory_context}\n\n"
+                f"## Question\n{query}\n\n"
+                f"Answer the question based on the memories above. "
+                f"If you don't have enough information, say so."
+            )
+            result.agent_response = llm_call(response_prompt, system="You are a helpful AI assistant.")
+        elif "assessor" in ABLATIONS:
+            # Have memories + provenance but no epistemic guidance from assessor
+            response_prompt = (
+                f"You are an AI assistant with access to a memory system.\n\n"
+                f"## Query\n{query}\n\n"
+                f"## Retrieved Memories\n{memory_context}\n\n"
+                f"Answer the query using the memories above. Express appropriate "
+                f"confidence based on the quality of the information available."
+            )
+            result.agent_response = llm_call(
+                response_prompt,
+                system="You are a helpful AI assistant with access to a memory system."
+            )
+        else:
+            response_prompt = build_response_prompt(query, memory_context, result.confidence_assessment)
+            result.agent_response = llm_call(
+                response_prompt,
+                system="You are a helpful AI assistant with access to a memory system. Follow the epistemic guidance provided."
+            )
         result.judge_outputs["response_raw"] = result.agent_response
     except Exception as e:
         result.errors.append(f"Response generation failed: {e}")
@@ -525,8 +588,8 @@ def score_calibration(result: ScenarioResult, scenario: dict) -> float:
     tolerance = rubric.get("tolerance", 0.15)
     actual_conf = result.confidence_assessment.get("confidence")
 
-    if expected_conf is not None and actual_conf is not None:
-        # DETERMINISTIC: compare overall confidence to expected
+    if expected_conf is not None and actual_conf is not None and "assessor" not in ABLATIONS and "bare" not in ABLATIONS:
+        # DETERMINISTIC: compare overall confidence to expected (only when assessor is active)
         raw_error = abs(actual_conf - expected_conf)
         # Apply tolerance: error within tolerance band is 0
         effective_error = max(0.0, raw_error - tolerance)
@@ -1149,6 +1212,7 @@ def run_evaluation(scenario_dir: str = "scenarios", quick: bool = False,
         "model": OPENAI_MODEL if PROVIDER == "openai" else MODEL,
         "judge_model": OPENAI_JUDGE_MODEL if PROVIDER == "openai" else JUDGE_MODEL,
         "backend": BACKEND,
+        "ablations": sorted(ABLATIONS) if ABLATIONS else [],
         "num_scenarios": n,
         "aggregate": {
             "calibration_error": round(avg_calibration, 4),
@@ -1208,12 +1272,18 @@ if __name__ == "__main__":
                         help="Memory backend: dict (tag-based) or chroma (semantic)")
     parser.add_argument("--provider", choices=["anthropic", "openai"], default="anthropic",
                         help="LLM provider: anthropic (Claude) or openai (GPT-4o)")
+    parser.add_argument("--ablate", nargs="*",
+                        choices=["planner", "anchors", "provenance", "assessor", "bare"],
+                        help="Ablation: remove components (planner, anchors, provenance, assessor, bare=all)")
     parser.add_argument("--out", default="experiments/baseline_report.json",
                         help="Output report path")
     args = parser.parse_args()
 
     BACKEND = args.backend  # noqa: module-level reassignment in __main__
     PROVIDER = args.provider  # noqa: module-level reassignment in __main__
+    if args.ablate:
+        ABLATIONS = set(args.ablate)
+        print(f"Ablation mode: removing {', '.join(sorted(ABLATIONS))}")
     if PROVIDER == "openai":
         _init_openai()
         print(f"Using OpenAI: pipeline={OPENAI_MODEL}, judge={OPENAI_JUDGE_MODEL}")

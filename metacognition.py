@@ -196,6 +196,14 @@ def format_memory_context(entries: list[MemoryEntry]) -> str:
     return "=== RETRIEVED MEMORIES ===\n" + "\n\n".join(blocks) + "\n=== END MEMORIES ==="
 
 
+def format_memory_raw(entries: list[MemoryEntry]) -> str:
+    """Format memories as plain text, no provenance metadata. Used for ablation."""
+    if not entries:
+        return "[No memories retrieved]"
+    blocks = [f"- {e.content}" for e in entries]
+    return "\n".join(blocks)
+
+
 # ============================================================
 # Component 2: Pre-Retrieval Planner
 # ============================================================

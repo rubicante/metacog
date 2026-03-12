@@ -320,6 +320,42 @@ Added Component 5 (Turn Memory Manager) to metacognition.py — at each conversa
 
 ---
 
+## Phase 5A: Ablation Study — What Does the Model Already Know?
+
+### Setup
+Progressively removed scaffolding components, ran 21 standard scenarios (excluding forgetting and multi-turn which use separate pipelines). All on Sonnet, dict backend.
+
+### Results
+
+| Ablation | Composite | Cal Err | Retrieval | Degrad | Delta |
+|----------|-----------|---------|-----------|--------|-------|
+| Full pipeline | 0.923 | 0.036 | 0.964 | 0.828 | — |
+| No planner | 0.934 | 0.011 | 0.969 | 0.826 | +0.011 |
+| No anchors | 0.918 | 0.010 | 0.971 | 0.771 | -0.005 |
+| No provenance | 0.917 | 0.025 | 0.956 | 0.800 | -0.006 |
+| No assessor | 0.817 | 0.232 | 0.956 | 0.743 | -0.107 |
+| Bare | 0.852 | 0.225 | 0.971 | 0.835 | -0.071 |
+
+### Key Findings
+
+1. **The planner is useless.** Removing it improves composite by +0.011. Rubric tags outperform the LLM planner. In a real system, simple heuristic retrieval (keyword + semantic) beats an LLM planning step.
+
+2. **Provenance headers and confidence anchors contribute ~0.005 each.** Within judge noise. The model reasons about memory quality nearly as well from raw content as from annotated metadata. This contradicts our Phase 2 finding that "information architecture > prompt engineering" — it turns out the model already infers most of what the metadata tells it.
+
+3. **The assessor is the entire scaffolding value.** Removing it drops composite by 0.107, concentrated in calibration (0.036 → 0.232). The structured confidence assessment via tool_use is the only component that measurably improves metacognitive behavior.
+
+4. **Bare outperforms no-assessor by +0.035.** Once the assessor is gone, the remaining scaffolding (provenance headers + response prompt instructions) actually hurts — the model does better reasoning freely from raw memories than following detailed epistemic instructions without calibrated confidence guidance.
+
+5. **Total scaffolding contribution is 0.071** (0.923 - 0.852). The model's latent metacognitive capability is 0.852 — already strong. The scaffolding adds 7.7% relative improvement, and almost all of it is the assessor.
+
+### Implications for Phase 5C (Pipeline Collapse)
+- The planner can be eliminated entirely
+- Provenance headers and anchors can be dropped or simplified
+- The assessor is the one component worth preserving — but could potentially be folded into a single-pass prompt
+- A collapsed pipeline = assessor + response in one call, ~50% cost reduction
+
+---
+
 ## Phase 4C: Cross-Model Validation (GPT-4o)
 
 ### Setup
