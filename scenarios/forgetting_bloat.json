@@ -1,0 +1,599 @@
+{
+  "scenario_id": "forgetting_bloat_01",
+  "category": "forgetting_policy",
+  "description": "Memory store has 50 memories accumulated over many sessions. The forgetting policy must decide what to keep, compress, and discard to stay within a budget of 20 memories.",
+
+  "forgetting_config": {
+    "target_count": 20,
+    "evaluation_type": "forgetting"
+  },
+
+  "memories": [
+    {
+      "memory_id": "mem_0001",
+      "session_id": "session_001",
+      "content": "User's name is Alex. They work as a backend engineer at a fintech startup.",
+      "timestamp": 1764000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["user_info", "identity"],
+      "metadata": {"topic": "identity", "access_count": 12}
+    },
+    {
+      "memory_id": "mem_0002",
+      "session_id": "session_001",
+      "content": "User prefers dark mode in all editors.",
+      "timestamp": 1764000100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["preferences", "editor"],
+      "metadata": {"topic": "preferences", "access_count": 3}
+    },
+    {
+      "memory_id": "mem_0003",
+      "session_id": "session_001",
+      "content": "User uses VS Code as their primary editor.",
+      "timestamp": 1764000200,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["preferences", "editor", "tools"],
+      "metadata": {"topic": "tools", "access_count": 5}
+    },
+    {
+      "memory_id": "mem_0004",
+      "session_id": "session_002",
+      "content": "Production database is PostgreSQL 15.3 on AWS RDS, us-east-1, db.r6g.xlarge instance.",
+      "timestamp": 1765000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["infrastructure", "database", "production", "aws"],
+      "metadata": {"topic": "database_config", "access_count": 8}
+    },
+    {
+      "memory_id": "mem_0005",
+      "session_id": "session_002",
+      "content": "Redis cache cluster on ElastiCache, 3 nodes, r6g.large, used for session storage and API response caching.",
+      "timestamp": 1765000100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["infrastructure", "cache", "production", "aws"],
+      "metadata": {"topic": "cache_config", "access_count": 4}
+    },
+    {
+      "memory_id": "mem_0006",
+      "session_id": "session_002",
+      "content": "API gateway is Kong, running on ECS Fargate. Routes to 4 backend services.",
+      "timestamp": 1765000200,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["infrastructure", "api", "production"],
+      "metadata": {"topic": "api_config", "access_count": 3}
+    },
+    {
+      "memory_id": "mem_0007",
+      "session_id": "session_003",
+      "content": "Helped debug a CORS issue with the API gateway. Solution was adding allowed origins to Kong configuration.",
+      "timestamp": 1766000000,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["debugging", "api", "cors"],
+      "metadata": {"topic": "debugging", "access_count": 0}
+    },
+    {
+      "memory_id": "mem_0008",
+      "session_id": "session_003",
+      "content": "User's frontend is React 18 with Next.js 14, deployed on Vercel.",
+      "timestamp": 1766000100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["infrastructure", "frontend", "deployment"],
+      "metadata": {"topic": "frontend_config", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_0009",
+      "session_id": "session_003",
+      "content": "Discussed authentication flow. Using NextAuth.js with Auth0 as the identity provider.",
+      "timestamp": 1766000200,
+      "compression": "structured_extraction",
+      "source_type": "system_generated",
+      "tags": ["auth", "infrastructure"],
+      "metadata": {"topic": "auth_config", "access_count": 3}
+    },
+    {
+      "memory_id": "mem_0010",
+      "session_id": "session_004",
+      "content": "Team size was 8 engineers when discussed.",
+      "timestamp": 1767000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["team", "company"],
+      "metadata": {"topic": "team_info", "access_count": 1}
+    },
+    {
+      "memory_id": "mem_0011",
+      "session_id": "session_004",
+      "content": "User mentioned they're using GitHub Actions for CI/CD. Runs tests, linting, and deploys to staging automatically.",
+      "timestamp": 1767000100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["infrastructure", "ci_cd", "tools"],
+      "metadata": {"topic": "ci_cd", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_0012",
+      "session_id": "session_004",
+      "content": "Helped set up a new GitHub Actions workflow for running integration tests against a test database.",
+      "timestamp": 1767000200,
+      "compression": "structured_extraction",
+      "source_type": "system_generated",
+      "tags": ["ci_cd", "testing", "debugging"],
+      "metadata": {"topic": "ci_cd_setup", "access_count": 0}
+    },
+    {
+      "memory_id": "mem_0013",
+      "session_id": "session_005",
+      "content": "User's company name is PayFlow. They handle B2B payment processing.",
+      "timestamp": 1768000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["company", "identity", "business"],
+      "metadata": {"topic": "company_info", "access_count": 6}
+    },
+    {
+      "memory_id": "mem_0014",
+      "session_id": "session_005",
+      "content": "Monthly active users around 5,000 businesses. Processing about $2M/month in transactions.",
+      "timestamp": 1768000100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["company", "metrics", "business"],
+      "metadata": {"topic": "business_metrics", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_0015",
+      "session_id": "session_005",
+      "content": "Compliance requirements: SOC 2 Type II certified, working toward PCI DSS Level 1.",
+      "timestamp": 1768000200,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["compliance", "security", "business"],
+      "metadata": {"topic": "compliance", "access_count": 4}
+    },
+    {
+      "memory_id": "mem_0016",
+      "session_id": "session_006",
+      "content": "Debugged a memory leak in the payment processing service. Root cause was unclosed database connections in the retry logic.",
+      "timestamp": 1769000000,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["debugging", "payments", "database"],
+      "metadata": {"topic": "debugging", "access_count": 1}
+    },
+    {
+      "memory_id": "mem_0017",
+      "session_id": "session_006",
+      "content": "Payment service is written in Python (FastAPI). Uses SQLAlchemy ORM.",
+      "timestamp": 1769000100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["infrastructure", "payments", "backend"],
+      "metadata": {"topic": "service_config", "access_count": 5}
+    },
+    {
+      "memory_id": "mem_0018",
+      "session_id": "session_006",
+      "content": "User mentioned they want to migrate payment service from Python/FastAPI to Go for performance.",
+      "timestamp": 1769000200,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["plans", "payments", "migration"],
+      "metadata": {"topic": "migration_plans", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_0019",
+      "session_id": "session_007",
+      "content": "Helped user set up Stripe Connect for marketplace payments. Configured webhooks for payment_intent.succeeded and transfer.created events.",
+      "timestamp": 1769500000,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["payments", "stripe", "integration"],
+      "metadata": {"topic": "stripe_setup", "access_count": 3}
+    },
+    {
+      "memory_id": "mem_0020",
+      "session_id": "session_007",
+      "content": "Stripe webhook endpoint: https://api.payflow.io/webhooks/stripe. Webhook signing secret stored in AWS Secrets Manager.",
+      "timestamp": 1769500100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["payments", "stripe", "config", "credentials"],
+      "metadata": {"topic": "stripe_config", "access_count": 4}
+    },
+    {
+      "memory_id": "mem_0021",
+      "session_id": "session_008",
+      "content": "Discussion about database indexing. User's orders table has 2M rows and growing. Added composite index on (merchant_id, created_at) which improved query time from 800ms to 12ms.",
+      "timestamp": 1770000000,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["database", "performance", "optimization"],
+      "metadata": {"topic": "db_optimization", "access_count": 1}
+    },
+    {
+      "memory_id": "mem_0022",
+      "session_id": "session_008",
+      "content": "User asked about read replicas. Currently no read replicas but considering adding one for analytics queries.",
+      "timestamp": 1770000100,
+      "compression": "structured_extraction",
+      "source_type": "system_generated",
+      "tags": ["database", "infrastructure", "plans"],
+      "metadata": {"topic": "db_plans", "access_count": 0}
+    },
+    {
+      "memory_id": "mem_0023",
+      "session_id": "session_009",
+      "content": "Sprint planning discussion. Current priorities: 1) Go migration for payment service, 2) Add read replicas, 3) Implement rate limiting on API.",
+      "timestamp": 1770500000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["plans", "sprint", "priorities"],
+      "metadata": {"topic": "sprint_plans", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_0024",
+      "session_id": "session_009",
+      "content": "User frustrated with current Python payment service performance under load. P99 latency hitting 2 seconds during peak.",
+      "timestamp": 1770500100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["performance", "payments", "issues"],
+      "metadata": {"topic": "performance_issues", "access_count": 1}
+    },
+    {
+      "memory_id": "mem_0025",
+      "session_id": "session_010",
+      "content": "Team grew to 12 engineers. Hired 2 backend, 1 frontend, 1 DevOps.",
+      "timestamp": 1771000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["team", "company"],
+      "metadata": {"topic": "team_info", "access_count": 2},
+      "supersedes": "mem_0010"
+    },
+    {
+      "memory_id": "mem_0026",
+      "session_id": "session_010",
+      "content": "New DevOps engineer is setting up Terraform for infrastructure as code. Currently everything is managed manually via AWS console.",
+      "timestamp": 1771000100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["infrastructure", "devops", "tools"],
+      "metadata": {"topic": "infra_management", "access_count": 1}
+    },
+    {
+      "memory_id": "mem_0027",
+      "session_id": "session_010",
+      "content": "Discussed monitoring setup. Using Datadog for APM, CloudWatch for infrastructure metrics, PagerDuty for alerts.",
+      "timestamp": 1771000200,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["infrastructure", "monitoring", "tools"],
+      "metadata": {"topic": "monitoring", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_0028",
+      "session_id": "session_011",
+      "content": "Helped user design the Go payment service architecture. Using hexagonal architecture with ports and adapters pattern.",
+      "timestamp": 1771200000,
+      "compression": "structured_extraction",
+      "source_type": "system_generated",
+      "tags": ["payments", "go", "architecture", "migration"],
+      "metadata": {"topic": "go_architecture", "access_count": 3}
+    },
+    {
+      "memory_id": "mem_0029",
+      "session_id": "session_011",
+      "content": "Go payment service will use pgx for PostgreSQL, chi for HTTP routing, and wire for dependency injection.",
+      "timestamp": 1771200100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["payments", "go", "tech_stack"],
+      "metadata": {"topic": "go_tech_stack", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_0030",
+      "session_id": "session_011",
+      "content": "Migration strategy: run Go service in parallel with Python service, route 10% of traffic to Go, gradually increase.",
+      "timestamp": 1771200200,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["payments", "migration", "strategy"],
+      "metadata": {"topic": "migration_strategy", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_0031",
+      "session_id": "session_012",
+      "content": "Fixed a bug in the Stripe webhook handler. Was processing duplicate events due to missing idempotency check.",
+      "timestamp": 1771400000,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["debugging", "stripe", "payments"],
+      "metadata": {"topic": "debugging", "access_count": 0}
+    },
+    {
+      "memory_id": "mem_0032",
+      "session_id": "session_012",
+      "content": "Added idempotency key table to the database. Stores event_id and processed_at timestamp.",
+      "timestamp": 1771400100,
+      "compression": "structured_extraction",
+      "source_type": "system_generated",
+      "tags": ["database", "payments", "stripe"],
+      "metadata": {"topic": "idempotency_fix", "access_count": 0}
+    },
+    {
+      "memory_id": "mem_0033",
+      "session_id": "session_013",
+      "content": "Monthly transaction volume grew to $3.5M/month. User excited about growth.",
+      "timestamp": 1771600000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["company", "metrics", "business"],
+      "metadata": {"topic": "business_metrics", "access_count": 1},
+      "supersedes": "mem_0014"
+    },
+    {
+      "memory_id": "mem_0034",
+      "session_id": "session_013",
+      "content": "Discussed Series A fundraising. Company targeting $5M raise, currently in conversations with 3 VCs.",
+      "timestamp": 1771600100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["company", "fundraising", "business"],
+      "metadata": {"topic": "fundraising", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_0035",
+      "session_id": "session_014",
+      "content": "Helped troubleshoot a Redis connection timeout issue. The ElastiCache security group wasn't allowing connections from the new ECS tasks.",
+      "timestamp": 1771800000,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["debugging", "cache", "infrastructure"],
+      "metadata": {"topic": "debugging", "access_count": 0}
+    },
+    {
+      "memory_id": "mem_0036",
+      "session_id": "session_014",
+      "content": "User asked about caching strategies. Currently caching API responses for 60 seconds and user sessions for 24 hours.",
+      "timestamp": 1771800100,
+      "compression": "structured_extraction",
+      "source_type": "system_generated",
+      "tags": ["cache", "performance"],
+      "metadata": {"topic": "caching_strategy", "access_count": 1}
+    },
+    {
+      "memory_id": "mem_0037",
+      "session_id": "session_015",
+      "content": "Go payment service is now handling 25% of production traffic. P99 latency is 180ms vs 2000ms for Python.",
+      "timestamp": 1772000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["payments", "go", "migration", "performance"],
+      "metadata": {"topic": "migration_progress", "access_count": 3}
+    },
+    {
+      "memory_id": "mem_0038",
+      "session_id": "session_015",
+      "content": "One bug found during Go rollout: currency rounding error in the conversion logic. Fixed by using decimal types instead of float64.",
+      "timestamp": 1772000100,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["debugging", "go", "payments"],
+      "metadata": {"topic": "go_debugging", "access_count": 1}
+    },
+    {
+      "memory_id": "mem_0039",
+      "session_id": "session_016",
+      "content": "Discussed database migration plan for adding multi-currency support. Need new tables: currencies, exchange_rates, merchant_currency_settings.",
+      "timestamp": 1772200000,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["database", "payments", "features"],
+      "metadata": {"topic": "multi_currency", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_0040",
+      "session_id": "session_016",
+      "content": "User wants to support EUR, GBP, and CAD in addition to USD. Priority is EUR first because most European merchants are requesting it.",
+      "timestamp": 1772200100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["payments", "features", "plans"],
+      "metadata": {"topic": "multi_currency_priority", "access_count": 1}
+    },
+    {
+      "memory_id": "mem_0041",
+      "session_id": "session_017",
+      "content": "Sprint priorities updated: 1) Complete Go migration (target 100% traffic), 2) Multi-currency EUR support, 3) Rate limiting.",
+      "timestamp": 1772400000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["plans", "sprint", "priorities"],
+      "metadata": {"topic": "sprint_plans", "access_count": 1},
+      "supersedes": "mem_0023"
+    },
+    {
+      "memory_id": "mem_0042",
+      "session_id": "session_017",
+      "content": "Read replicas deprioritized. The Go migration reduced database load enough that read replicas aren't urgent anymore.",
+      "timestamp": 1772400100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["database", "infrastructure", "plans"],
+      "metadata": {"topic": "db_plans", "access_count": 0},
+      "supersedes": "mem_0022"
+    },
+    {
+      "memory_id": "mem_0043",
+      "session_id": "session_018",
+      "content": "Helped implement rate limiting using Redis. Token bucket algorithm, 100 requests per minute per API key.",
+      "timestamp": 1772500000,
+      "compression": "structured_extraction",
+      "source_type": "system_generated",
+      "tags": ["api", "security", "implementation"],
+      "metadata": {"topic": "rate_limiting", "access_count": 1}
+    },
+    {
+      "memory_id": "mem_0044",
+      "session_id": "session_018",
+      "content": "User asked about API versioning. Currently no versioning, all routes are /api/. Planning to add /api/v1/ prefix.",
+      "timestamp": 1772500100,
+      "compression": "structured_extraction",
+      "source_type": "system_generated",
+      "tags": ["api", "plans"],
+      "metadata": {"topic": "api_versioning", "access_count": 0}
+    },
+    {
+      "memory_id": "mem_0045",
+      "session_id": "session_019",
+      "content": "Go migration complete — 100% of payment traffic now on Go service. Python service still running as fallback but receiving no traffic.",
+      "timestamp": 1772700000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["payments", "go", "migration"],
+      "metadata": {"topic": "migration_complete", "access_count": 2},
+      "supersedes": "mem_0037"
+    },
+    {
+      "memory_id": "mem_0046",
+      "session_id": "session_019",
+      "content": "User planning to decommission Python payment service next sprint. Need to migrate remaining scheduled jobs first.",
+      "timestamp": 1772700100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["payments", "migration", "plans"],
+      "metadata": {"topic": "python_decommission", "access_count": 1}
+    },
+    {
+      "memory_id": "mem_0047",
+      "session_id": "session_020",
+      "content": "PCI DSS Level 1 audit scheduled for next month. User needs to prepare documentation and ensure all security controls are in place.",
+      "timestamp": 1772800000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["compliance", "security", "business"],
+      "metadata": {"topic": "pci_audit", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_0048",
+      "session_id": "session_020",
+      "content": "Reviewed encryption at rest and in transit. RDS encryption enabled, all API traffic over TLS 1.3, secrets in AWS Secrets Manager.",
+      "timestamp": 1772800100,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["security", "compliance", "infrastructure"],
+      "metadata": {"topic": "security_review", "access_count": 1}
+    },
+    {
+      "memory_id": "mem_0049",
+      "session_id": "session_020",
+      "content": "User mentioned wanting to add IP whitelisting for webhook endpoints as part of PCI compliance hardening.",
+      "timestamp": 1772800200,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["security", "compliance", "plans"],
+      "metadata": {"topic": "security_plans", "access_count": 0}
+    },
+    {
+      "memory_id": "mem_0050",
+      "session_id": "session_020",
+      "content": "Series A closed at $6M. User very happy. Plan to hire 5 more engineers in Q2.",
+      "timestamp": 1772800300,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["company", "fundraising", "team"],
+      "metadata": {"topic": "fundraising_update", "access_count": 3},
+      "supersedes": "mem_0034"
+    }
+  ],
+
+  "query": "We need to clean up the memory store — it's getting bloated. Reduce to 20 memories while keeping the important stuff.",
+
+  "ground_truth": {
+    "correct_answer": "The forgetting policy should keep critical infrastructure config, current state of active projects, user identity, and compliance-related memories. It should discard fully superseded memories and resolved debugging sessions. It should compress intermediate project states.",
+    "must_keep": [
+      "mem_0001",
+      "mem_0004",
+      "mem_0013",
+      "mem_0015",
+      "mem_0020",
+      "mem_0025",
+      "mem_0033",
+      "mem_0045",
+      "mem_0047",
+      "mem_0050"
+    ],
+    "should_discard": [
+      "mem_0010",
+      "mem_0014",
+      "mem_0022",
+      "mem_0023",
+      "mem_0034",
+      "mem_0007",
+      "mem_0031",
+      "mem_0035"
+    ],
+    "can_compress": [
+      "mem_0012",
+      "mem_0016",
+      "mem_0021",
+      "mem_0028",
+      "mem_0032",
+      "mem_0036"
+    ],
+    "correct_epistemic_behavior": [
+      "Discard superseded memories when the superseding memory captures the essential info",
+      "Keep user identity, infrastructure config, credentials, and compliance information",
+      "Keep current project state (Go migration complete, multi-currency plans, PCI audit)",
+      "Discard or compress resolved one-time debugging sessions",
+      "Preserve business context (metrics, fundraising outcome)",
+      "Keep the most recent sprint priorities, discard older superseded ones"
+    ],
+    "incorrect_behaviors": [
+      "Keeping superseded memories (e.g., keeping both mem_0010 and mem_0025 about team size)",
+      "Discarding credential/config information (e.g., Stripe webhook URL)",
+      "Discarding compliance information before the PCI audit",
+      "Keeping all debugging sessions at full fidelity",
+      "Discarding the user's identity or company information",
+      "Keeping old business metrics that have been superseded by newer numbers"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.80,
+      "tolerance": 0.15,
+      "key_claims": [
+        {"claim": "Superseded memories should be discarded", "is_true": true},
+        {"claim": "All debugging sessions should be kept at full fidelity", "is_true": false},
+        {"claim": "Infrastructure config and credentials are high priority to keep", "is_true": true},
+        {"claim": "Compliance information should be kept given upcoming PCI audit", "is_true": true}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": [],
+      "necessary_memories": [],
+      "helpful_memories": [],
+      "irrelevant_memories": []
+    },
+    "degradation": {
+      "expected_behavior": "principled_forgetting",
+      "should_keep_critical": true,
+      "should_discard_superseded": true,
+      "should_compress_intermediate": true,
+      "should_preserve_compliance": true,
+      "should_explain_reasoning": true
+    }
+  }
+}

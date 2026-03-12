@@ -1,0 +1,87 @@
+{
+  "scenario_id": "cross_session_01",
+  "category": "cross_session_synthesis",
+  "description": "Answering requires combining information from 3 sessions stored at different fidelity levels. Agent should note varying reliability.",
+
+  "memories": [
+    {
+      "memory_id": "mem_0060",
+      "session_id": "session_002",
+      "content": "User is building a recommendation engine for their e-commerce platform. They want to use collaborative filtering.",
+      "timestamp": 1770660000,
+      "compression": "structured_extraction",
+      "source_type": "user_stated",
+      "tags": ["project", "recommendation", "architecture"],
+      "metadata": {"topic": "project_overview"}
+    },
+    {
+      "memory_id": "mem_0061",
+      "session_id": "session_005",
+      "content": "Discussed data pipeline for the recommendation engine. User has ~2M users and ~50K products. They're using Apache Spark for batch processing and considering Redis for real-time serving.",
+      "timestamp": 1771660000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["project", "recommendation", "data", "infrastructure"],
+      "metadata": {"topic": "data_pipeline"}
+    },
+    {
+      "memory_id": "mem_0062",
+      "session_id": "session_008",
+      "content": "User mentioned performance issues with their recommendation system. Something about cold start and latency.",
+      "timestamp": 1772460000,
+      "compression": "lossy_summary",
+      "source_type": "system_generated",
+      "tags": ["project", "recommendation", "performance"],
+      "metadata": {"topic": "performance_issues", "original_length": 1500, "summary_length": 95, "compression_ratio": 0.06}
+    }
+  ],
+
+  "query": "Can you give me an overview of where my recommendation engine project stands? What are the key issues?",
+
+  "ground_truth": {
+    "correct_answer": "The project is building a collaborative filtering recommendation engine for e-commerce (~2M users, ~50K products). Uses Spark for batch, considering Redis for real-time. Has performance issues around cold start and latency, but details of those issues are unclear from the summary.",
+    "correct_epistemic_behavior": [
+      "Synthesize information from all three sessions",
+      "Note that the data pipeline details (session 5) are high-confidence verbatim records",
+      "Note that the performance issues (session 8) are only a lossy summary — specific details may be missing",
+      "Present the architecture overview (session 2) with moderate confidence",
+      "Clearly distinguish between well-documented facts and lossy summaries",
+      "Suggest revisiting the performance issues in more detail"
+    ],
+    "incorrect_behaviors": [
+      "Treating all three memories as equally reliable",
+      "Fabricating specific performance metrics or solutions not in memory",
+      "Ignoring the performance issues entirely",
+      "Not mentioning the varying fidelity levels"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.65,
+      "tolerance": 0.15,
+      "key_claims": [
+        {"claim": "User is building a collaborative filtering recommendation engine", "is_true": true},
+        {"claim": "Platform has ~2M users and ~50K products", "is_true": true},
+        {"claim": "Using Apache Spark for batch processing", "is_true": true},
+        {"claim": "There are cold start and latency issues", "is_true": true},
+        {"claim": "The specific nature of the performance problems is well-documented", "is_true": false}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": ["project", "recommendation"],
+      "necessary_memories": ["mem_0060", "mem_0061", "mem_0062"],
+      "helpful_memories": [],
+      "irrelevant_memories": []
+    },
+    "degradation": {
+      "expected_behavior": "caveated",
+      "should_acknowledge_update": false,
+      "should_surface_contradiction": false,
+      "should_express_uncertainty": true,
+      "should_note_varying_fidelity": true,
+      "should_provide_partial": true
+    }
+  }
+}

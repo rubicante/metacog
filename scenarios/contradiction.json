@@ -1,0 +1,86 @@
+{
+  "scenario_id": "contradiction_01",
+  "category": "contradiction",
+  "description": "Two memories from different sessions record conflicting values for the same fact, with no clear supersession relationship. Agent should surface the contradiction.",
+
+  "memories": [
+    {
+      "memory_id": "mem_0030",
+      "session_id": "session_004",
+      "content": "User mentioned their company has 50 employees and is based in Austin, Texas.",
+      "timestamp": 1771660000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["company", "team_size", "location"],
+      "metadata": {"topic": "company_info"}
+    },
+    {
+      "memory_id": "mem_0031",
+      "session_id": "session_009",
+      "content": "User said their team has about 120 people across two offices.",
+      "timestamp": 1772460000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["company", "team_size"],
+      "contradicts": ["mem_0030"],
+      "metadata": {"topic": "company_info"}
+    },
+    {
+      "memory_id": "mem_0032",
+      "session_id": "session_006",
+      "content": "User's company is a B2B SaaS platform focused on supply chain management.",
+      "timestamp": 1772060000,
+      "compression": "structured_extraction",
+      "source_type": "user_stated",
+      "tags": ["company", "product"],
+      "metadata": {"topic": "company_info"}
+    }
+  ],
+
+  "query": "How many people work at my company? I'm trying to figure out which benefits plan tier we qualify for.",
+
+  "ground_truth": {
+    "correct_answer": "There are conflicting records: 50 employees (session 4) vs. ~120 people across two offices (session 9). The agent cannot resolve this.",
+    "correct_epistemic_behavior": [
+      "Surface BOTH numbers explicitly — 50 and ~120",
+      "Note that these come from different sessions and appear to conflict",
+      "Do NOT silently pick one number",
+      "Acknowledge this matters for the benefits decision (high stakes)",
+      "Suggest the user clarify which is current",
+      "Note that '50 employees' vs '120 people across two offices' might reflect different scopes (e.g., one team vs whole company, or growth over time)"
+    ],
+    "incorrect_behaviors": [
+      "Stating only one number without mentioning the conflict",
+      "Averaging or combining the numbers",
+      "Ignoring the contradiction entirely",
+      "Refusing to provide any information",
+      "Guessing which is more recent without evidence"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.3,
+      "tolerance": 0.2,
+      "key_claims": [
+        {"claim": "The company has 50 employees", "is_true": "conflicted"},
+        {"claim": "The company has about 120 people", "is_true": "conflicted"},
+        {"claim": "There is a contradiction in the records", "is_true": true}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": ["company", "team_size"],
+      "necessary_memories": ["mem_0030", "mem_0031"],
+      "helpful_memories": ["mem_0032"],
+      "irrelevant_memories": []
+    },
+    "degradation": {
+      "expected_behavior": "surface_contradiction",
+      "should_acknowledge_update": false,
+      "should_surface_contradiction": true,
+      "should_express_uncertainty": true,
+      "should_provide_partial": true
+    }
+  }
+}

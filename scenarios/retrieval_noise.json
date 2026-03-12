@@ -1,0 +1,182 @@
+{
+  "scenario_id": "retrieval_noise_01",
+  "category": "retrieval_noise",
+  "description": "Store has 15+ memories spanning many topics. User asks about one specific thing. Tests whether the assessor correctly handles a mix of relevant and irrelevant results from semantic search.",
+
+  "memories": [
+    {
+      "memory_id": "mem_0090",
+      "session_id": "session_040",
+      "content": "User's name is Alex. They work at a fintech startup called PayFlow.",
+      "timestamp": 1770660000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["identity", "work"]
+    },
+    {
+      "memory_id": "mem_0091",
+      "session_id": "session_040",
+      "content": "PayFlow processes payments using Stripe as the payment processor. They handle about 10,000 transactions per day.",
+      "timestamp": 1770660100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["payments", "stripe", "business"]
+    },
+    {
+      "memory_id": "mem_0092",
+      "session_id": "session_040",
+      "content": "User prefers dark mode in all IDEs and editors. Currently using VS Code with the One Dark Pro theme.",
+      "timestamp": 1770660200,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["preference", "editor", "theme"]
+    },
+    {
+      "memory_id": "mem_0093",
+      "session_id": "session_041",
+      "content": "PayFlow's backend is built with FastAPI (Python) and uses PostgreSQL 15 as the primary database.",
+      "timestamp": 1770660300,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["tech_stack", "backend", "database"]
+    },
+    {
+      "memory_id": "mem_0094",
+      "session_id": "session_041",
+      "content": "User is learning Rust in their spare time. They completed the Rustlings exercises and are starting a side project.",
+      "timestamp": 1770660400,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["learning", "rust", "personal"]
+    },
+    {
+      "memory_id": "mem_0095",
+      "session_id": "session_041",
+      "content": "PayFlow needs to be PCI-DSS compliant. They completed their last audit in January 2026 and passed.",
+      "timestamp": 1770660500,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["compliance", "pci", "audit"]
+    },
+    {
+      "memory_id": "mem_0096",
+      "session_id": "session_042",
+      "content": "User's team has 8 engineers. They use GitHub for version control and Linear for project management.",
+      "timestamp": 1770660600,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["team", "tools", "project_management"]
+    },
+    {
+      "memory_id": "mem_0097",
+      "session_id": "session_042",
+      "content": "PayFlow deploys to AWS using ECS Fargate. They have staging and production environments. Deploys happen via GitHub Actions.",
+      "timestamp": 1770660700,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["deployment", "aws", "ci_cd"]
+    },
+    {
+      "memory_id": "mem_0098",
+      "session_id": "session_042",
+      "content": "User drinks oat milk lattes. Their go-to coffee shop is Blue Bottle.",
+      "timestamp": 1770660800,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["preference", "personal"]
+    },
+    {
+      "memory_id": "mem_0099",
+      "session_id": "session_043",
+      "content": "PayFlow's frontend is a React SPA with TypeScript. They use Tailwind CSS for styling.",
+      "timestamp": 1770660900,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["tech_stack", "frontend"]
+    },
+    {
+      "memory_id": "mem_0100",
+      "session_id": "session_043",
+      "content": "User's team does code reviews on all PRs. They require at least 2 approvals before merging to main.",
+      "timestamp": 1770661000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["process", "code_review"]
+    },
+    {
+      "memory_id": "mem_0101",
+      "session_id": "session_043",
+      "content": "PayFlow uses Redis for caching and as a message broker for async job processing with Celery.",
+      "timestamp": 1770661100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["tech_stack", "caching", "redis"]
+    },
+    {
+      "memory_id": "mem_0102",
+      "session_id": "session_044",
+      "content": "User is planning to migrate from REST to gRPC for internal service communication. Timeline is Q2 2026.",
+      "timestamp": 1770661200,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["architecture", "migration", "grpc"]
+    },
+    {
+      "memory_id": "mem_0103",
+      "session_id": "session_044",
+      "content": "PayFlow's database schema has 47 tables. The largest table (transactions) has about 50 million rows.",
+      "timestamp": 1770661300,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["database", "schema"]
+    },
+    {
+      "memory_id": "mem_0104",
+      "session_id": "session_044",
+      "content": "User mentioned they're interviewing for a senior engineering role at another company but haven't decided to leave PayFlow yet.",
+      "timestamp": 1770661400,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["career", "personal", "confidential"]
+    }
+  ],
+
+  "query": "What payment processor does my company use and how many transactions do we handle?",
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.92,
+      "tolerance": 0.10,
+      "key_claims": [
+        {"claim": "PayFlow uses Stripe", "expected_confidence": "high", "ground_truth": "true"},
+        {"claim": "About 10,000 transactions per day", "expected_confidence": "high", "ground_truth": "true"}
+      ]
+    },
+    "retrieval": {
+      "necessary_memories": ["mem_0091"],
+      "helpful_memories": ["mem_0090"],
+      "irrelevant_memories": ["mem_0092", "mem_0094", "mem_0098", "mem_0104"],
+      "should_retrieve": true,
+      "relevant_tags": ["payments", "stripe", "business"]
+    },
+    "degradation": {
+      "expected_behavior": "direct_confident_answer",
+      "should_provide_partial": false
+    }
+  },
+
+  "ground_truth": {
+    "correct_epistemic_behavior": [
+      "Directly state that PayFlow uses Stripe",
+      "Provide the 10,000 transactions per day figure",
+      "Answer confidently — this is verbatim, recent memory",
+      "May mention the company name PayFlow for context"
+    ],
+    "incorrect_behaviors": [
+      "Expressing uncertainty when the answer is clearly in memory",
+      "Including irrelevant details about coffee preferences or career",
+      "Failing to find the payment processor info among 15 memories",
+      "Confusing database info with transaction processing info"
+    ]
+  }
+}

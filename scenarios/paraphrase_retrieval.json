@@ -1,0 +1,83 @@
+{
+  "scenario_id": "paraphrase_retrieval_01",
+  "category": "paraphrase_retrieval",
+  "description": "Information stored using specific technical language, queried in casual/different phrasing. Tests whether semantic search can bridge the vocabulary gap that tag-based retrieval would miss.",
+
+  "memories": [
+    {
+      "memory_id": "mem_0080",
+      "session_id": "session_030",
+      "content": "User's application implements rate limiting using a token bucket algorithm with a refill rate of 100 tokens per second and a burst capacity of 500 tokens.",
+      "timestamp": 1770660000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["rate_limiting", "architecture", "token_bucket"]
+    },
+    {
+      "memory_id": "mem_0081",
+      "session_id": "session_030",
+      "content": "The user's API gateway handles authentication via JWT tokens issued by Auth0. Token expiry is set to 1 hour with refresh tokens valid for 30 days.",
+      "timestamp": 1770660200,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["authentication", "jwt", "auth0", "api_gateway"]
+    },
+    {
+      "memory_id": "mem_0082",
+      "session_id": "session_031",
+      "content": "User configured their CDN (CloudFront) with a 24-hour TTL for static assets and 5-minute TTL for API responses. Origin is an ALB in us-east-1.",
+      "timestamp": 1770660400,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["cdn", "cloudfront", "caching", "infrastructure"]
+    },
+    {
+      "memory_id": "mem_0083",
+      "session_id": "session_031",
+      "content": "User's monitoring stack uses Datadog for APM and logs, PagerDuty for alerting. Alert threshold for API latency is p99 > 500ms.",
+      "timestamp": 1770660600,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["monitoring", "datadog", "alerting", "infrastructure"]
+    }
+  ],
+
+  "query": "How do I throttle requests in my app? What are the limits I set up?",
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.90,
+      "tolerance": 0.10,
+      "key_claims": [
+        {"claim": "Token bucket with 100 tokens/sec refill", "expected_confidence": "high", "ground_truth": "true"},
+        {"claim": "Burst capacity of 500 tokens", "expected_confidence": "high", "ground_truth": "true"}
+      ]
+    },
+    "retrieval": {
+      "necessary_memories": ["mem_0080"],
+      "helpful_memories": [],
+      "irrelevant_memories": ["mem_0081", "mem_0082", "mem_0083"],
+      "should_retrieve": true,
+      "relevant_tags": ["rate_limiting", "token_bucket"]
+    },
+    "degradation": {
+      "expected_behavior": "direct_confident_answer",
+      "should_provide_partial": false
+    }
+  },
+
+  "ground_truth": {
+    "correct_epistemic_behavior": [
+      "Correctly identify that 'throttle requests' refers to rate limiting",
+      "Provide the token bucket configuration details (100 tokens/sec, 500 burst)",
+      "Answer confidently since this is verbatim memory",
+      "Do not confuse JWT token expiry with rate limiting tokens"
+    ],
+    "incorrect_behaviors": [
+      "Failing to find rate limiting info because query says 'throttle' not 'rate limit'",
+      "Confusing JWT authentication tokens with rate limiting tokens",
+      "Expressing uncertainty when the information is clearly in verbatim memory",
+      "Providing CDN TTL info when asked about request throttling"
+    ]
+  }
+}

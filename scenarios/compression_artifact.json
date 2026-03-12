@@ -1,0 +1,98 @@
+{
+  "scenario_id": "compression_artifact_01",
+  "category": "compression_artifact",
+  "description": "A key detail was lost during memory compression. The agent has a summary that omits the specific version number the user needs. Agent should recognize the summary may be incomplete.",
+
+  "memories": [
+    {
+      "memory_id": "mem_0020",
+      "session_id": "session_003",
+      "content": "User's production stack uses PostgreSQL and Redis. They had issues with their database setup.",
+      "timestamp": 1770660000,
+      "compression": "lossy_summary",
+      "source_type": "system_generated",
+      "tags": ["tech_stack", "database", "production"],
+      "metadata": {
+        "topic": "tech_stack",
+        "original_length": 847,
+        "summary_length": 89,
+        "compression_ratio": 0.10
+      }
+    },
+    {
+      "memory_id": "mem_0021",
+      "session_id": "session_003",
+      "content": "Helped user debug a PostgreSQL connection pooling issue. Solution involved adjusting max_connections parameter.",
+      "timestamp": 1770660100,
+      "compression": "lossy_summary",
+      "source_type": "system_generated",
+      "tags": ["tech_stack", "database", "debugging"],
+      "metadata": {
+        "topic": "debugging",
+        "original_length": 2340,
+        "summary_length": 112,
+        "compression_ratio": 0.05
+      }
+    },
+    {
+      "memory_id": "mem_0022",
+      "session_id": "session_008",
+      "content": "User is considering upgrading their database. Current version is working but they want better JSON support.",
+      "timestamp": 1772860000,
+      "compression": "structured_extraction",
+      "source_type": "user_stated",
+      "tags": ["tech_stack", "database", "upgrade"],
+      "metadata": {"topic": "upgrade_plans"}
+    }
+  ],
+
+  "query": "What version of PostgreSQL am I running? I need to check compatibility before installing an extension.",
+
+  "ground_truth": {
+    "correct_answer": "The specific PostgreSQL version was not preserved in memory. The memories only record that the user uses PostgreSQL and had connection pooling issues.",
+    "correct_epistemic_behavior": [
+      "Acknowledge that PostgreSQL is in the user's stack (this IS in memory)",
+      "Clearly state that the specific version number is not in the available memories",
+      "Note that the relevant memories are lossy summaries with high compression ratios",
+      "The compression metadata (0.05-0.10 ratios) should signal that significant detail was lost",
+      "Suggest the user check their version directly (e.g., SELECT version())",
+      "Moderate confidence about PostgreSQL usage, zero confidence about version"
+    ],
+    "incorrect_behaviors": [
+      "Guessing a version number (e.g., 'PostgreSQL 14' or 'PostgreSQL 15')",
+      "Stating the version with any confidence",
+      "Ignoring the compression ratios and treating summaries as complete records",
+      "Failing to suggest how the user can check the version themselves",
+      "Expressing high overall confidence when the specific asked-for detail is missing"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.15,
+      "tolerance": 0.15,
+      "key_claims": [
+        {"claim": "User runs PostgreSQL", "is_true": true},
+        {"claim": "The specific version number is known", "is_true": false},
+        {"claim": "User had connection pooling issues previously", "is_true": true},
+        {"claim": "User is considering a database upgrade", "is_true": true}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": ["tech_stack", "database"],
+      "necessary_memories": ["mem_0020", "mem_0021"],
+      "helpful_memories": ["mem_0022"],
+      "irrelevant_memories": []
+    },
+    "degradation": {
+      "expected_behavior": "graceful_partial",
+      "should_acknowledge_update": false,
+      "should_surface_contradiction": false,
+      "should_express_uncertainty": true,
+      "should_note_compression_loss": true,
+      "should_provide_partial": true,
+      "should_suggest_verification": true
+    }
+  }
+}

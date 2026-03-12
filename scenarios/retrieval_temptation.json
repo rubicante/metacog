@@ -1,0 +1,83 @@
+{
+  "scenario_id": "retrieval_temptation_01",
+  "category": "retrieval_temptation",
+  "description": "Query is semantically similar to past conversations but contextually different. Agent should not retrieve irrelevant memories.",
+
+  "memories": [
+    {
+      "memory_id": "mem_0070",
+      "session_id": "session_003",
+      "content": "User asked about Python's GIL (Global Interpreter Lock) and how it affects multithreading performance. Explained that CPU-bound tasks don't benefit from threads in CPython.",
+      "timestamp": 1771060000,
+      "compression": "structured_extraction",
+      "source_type": "system_generated",
+      "tags": ["python", "performance", "threading", "technical"],
+      "metadata": {"topic": "python_threading"}
+    },
+    {
+      "memory_id": "mem_0071",
+      "session_id": "session_006",
+      "content": "Helped user optimize a Python script for processing CSV files. Used multiprocessing instead of threading for CPU-bound work. Achieved 4x speedup on their 8-core machine.",
+      "timestamp": 1772060000,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["python", "performance", "optimization", "technical"],
+      "metadata": {"topic": "python_optimization"}
+    },
+    {
+      "memory_id": "mem_0072",
+      "session_id": "session_010",
+      "content": "User mentioned they're learning Rust and working through the official Rust book.",
+      "timestamp": 1772860000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["rust", "learning"],
+      "metadata": {"topic": "rust_learning"}
+    }
+  ],
+
+  "query": "I'm having a performance issue with my Rust program. It's slower than I expected when processing large files.",
+
+  "ground_truth": {
+    "correct_answer": "The agent should help with the Rust performance issue directly. The Python performance memories are semantically similar (performance, file processing) but contextually irrelevant — the user is asking about Rust, not Python.",
+    "correct_epistemic_behavior": [
+      "Recognize this is about Rust, not Python",
+      "May note the user is learning Rust (mem_0072 is relevant context)",
+      "Should NOT bring up Python GIL or Python multiprocessing as solutions",
+      "Should ask diagnostic questions about the Rust performance issue",
+      "If retrieving Python memories, should explicitly note they're from a different language context"
+    ],
+    "incorrect_behaviors": [
+      "Suggesting Python multiprocessing solutions for a Rust problem",
+      "Bringing up the GIL discussion as if it's relevant",
+      "Confusing the Python CSV optimization with the current Rust issue",
+      "Not realizing the query is about Rust specifically"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.4,
+      "tolerance": 0.2,
+      "key_claims": [
+        {"claim": "The user is learning Rust", "is_true": true},
+        {"claim": "Previous Python optimization experience is directly applicable here", "is_true": false},
+        {"claim": "The GIL is relevant to Rust performance", "is_true": false}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": ["rust"],
+      "necessary_memories": ["mem_0072"],
+      "helpful_memories": [],
+      "irrelevant_memories": ["mem_0070", "mem_0071"]
+    },
+    "degradation": {
+      "expected_behavior": "graceful_partial",
+      "should_acknowledge_update": false,
+      "should_surface_contradiction": false,
+      "should_express_uncertainty": false,
+      "should_provide_partial": true
+    }
+  }
+}

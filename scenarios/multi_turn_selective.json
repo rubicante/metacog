@@ -1,0 +1,183 @@
+{
+  "scenario_id": "multi_turn_selective_01",
+  "category": "multi_turn",
+  "description": "10-turn conversation mixing important facts with casual chat. Tests selective storage — the agent must NOT store everything, only decision-relevant information.",
+
+  "multi_turn_config": {
+    "evaluation_type": "multi_turn"
+  },
+
+  "initial_memories": [
+    {
+      "memory_id": "mem_init_01",
+      "session_id": "session_prev",
+      "content": "User is building a mobile app for restaurant reservations. Uses React Native.",
+      "timestamp": 1771000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["project", "mobile", "tech_stack"],
+      "metadata": {}
+    }
+  ],
+
+  "turns": [
+    {
+      "turn_id": 1,
+      "user_message": "Hey, good morning! How's it going?",
+      "expected_ops": {
+        "should_store": false,
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "Casual greeting. No memory ops needed."
+    },
+    {
+      "turn_id": 2,
+      "user_message": "I've been thinking about push notifications. We need to implement them for reservation confirmations and reminders.",
+      "expected_ops": {
+        "should_store": true,
+        "store_should_contain": ["push notifications", "reservation"],
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "New feature requirement worth storing."
+    },
+    {
+      "turn_id": 3,
+      "user_message": "Yeah, sounds good. Let me grab some coffee first though, brb.",
+      "expected_ops": {
+        "should_store": false,
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "Casual chat. Should NOT store."
+    },
+    {
+      "turn_id": 4,
+      "user_message": "Ok I'm back. So for push notifications, should we use Firebase Cloud Messaging or Apple Push Notification service directly?",
+      "expected_ops": {
+        "should_store": false,
+        "should_update": false,
+        "should_retrieve": true,
+        "retrieve_should_use": ["project", "mobile", "tech_stack"]
+      },
+      "response_context": "Question needing project context for advice. Retrieve, don't store."
+    },
+    {
+      "turn_id": 5,
+      "user_message": "Let's go with Firebase Cloud Messaging. It handles both iOS and Android which is what we need for React Native.",
+      "expected_ops": {
+        "should_store": true,
+        "store_should_contain": ["Firebase Cloud Messaging"],
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "Technology decision — store it."
+    },
+    {
+      "turn_id": 6,
+      "user_message": "Oh man, did you see the game last night? Crazy ending.",
+      "expected_ops": {
+        "should_store": false,
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "Completely off-topic. Must NOT store."
+    },
+    {
+      "turn_id": 7,
+      "user_message": "Anyway, back to work. We also need to set up a staging environment. Our backend is running on Heroku right now but we're thinking about moving to AWS.",
+      "expected_ops": {
+        "should_store": true,
+        "store_should_contain": ["Heroku", "AWS"],
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "Infrastructure information worth storing."
+    },
+    {
+      "turn_id": 8,
+      "user_message": "Can you remind me what our current tech stack looks like?",
+      "expected_ops": {
+        "should_store": false,
+        "should_update": false,
+        "should_retrieve": true,
+        "must_recall_correctly": "React Native, Firebase Cloud Messaging, Heroku backend considering AWS"
+      },
+      "response_context": "Recall request. Should retrieve and summarize."
+    },
+    {
+      "turn_id": 9,
+      "user_message": "Great, that's right. Oh, one more thing — our database is MongoDB Atlas with about 50,000 restaurant listings.",
+      "expected_ops": {
+        "should_store": true,
+        "store_should_contain": ["MongoDB Atlas", "50,000"],
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "New database information."
+    },
+    {
+      "turn_id": 10,
+      "user_message": "Alright, thanks for the help today. Talk later!",
+      "expected_ops": {
+        "should_store": false,
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "Farewell. Should NOT store."
+    }
+  ],
+
+  "ground_truth": {
+    "final_memory_should_contain": [
+      "React Native mobile app",
+      "push notifications for reservations",
+      "Firebase Cloud Messaging",
+      "Heroku backend considering AWS",
+      "MongoDB Atlas 50000 restaurants"
+    ],
+    "final_memory_should_not_contain": [],
+    "correct_epistemic_behavior": [
+      "Do NOT store casual greetings, coffee breaks, sports chat, or farewells",
+      "Store technology decisions (FCM) and infrastructure facts (Heroku, MongoDB)",
+      "Store feature requirements (push notifications)",
+      "Retrieve when user asks for recall",
+      "Retrieve project context when giving architectural advice",
+      "Final memory count should be small (4-6 new memories + 1 initial)"
+    ],
+    "incorrect_behaviors": [
+      "Storing 'good morning', 'brb', 'game last night', or 'talk later' as memories",
+      "Storing every single message regardless of content",
+      "Not storing the FCM decision or MongoDB information",
+      "Failing to retrieve when user asks 'remind me what our tech stack looks like'",
+      "Having more than 8 total memories at the end (sign of over-storing)"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.85,
+      "tolerance": 0.1,
+      "key_claims": [
+        {"claim": "The system stores technology decisions", "is_true": true},
+        {"claim": "The system stores casual chat messages", "is_true": false},
+        {"claim": "The system retrieves when asked for recall", "is_true": true},
+        {"claim": "The final memory is compact and relevant", "is_true": true}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": [],
+      "necessary_memories": [],
+      "helpful_memories": [],
+      "irrelevant_memories": []
+    },
+    "degradation": {
+      "expected_behavior": "selective_storage",
+      "should_store_selectively": true,
+      "should_not_store_casual": true,
+      "should_retrieve_when_asked": true
+    }
+  }
+}

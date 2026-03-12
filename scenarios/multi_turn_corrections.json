@@ -1,0 +1,156 @@
+{
+  "scenario_id": "multi_turn_corrections_01",
+  "category": "multi_turn",
+  "description": "8-turn conversation where the user provides information, then corrects it multiple times. Tests whether the memory manager properly updates rather than accumulating contradictory entries.",
+
+  "multi_turn_config": {
+    "evaluation_type": "multi_turn"
+  },
+
+  "initial_memories": [],
+
+  "turns": [
+    {
+      "turn_id": 1,
+      "user_message": "I need help setting up my deployment. We're deploying to AWS using Docker containers on ECS.",
+      "expected_ops": {
+        "should_store": true,
+        "store_should_contain": ["AWS", "Docker", "ECS"],
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "New deployment information."
+    },
+    {
+      "turn_id": 2,
+      "user_message": "Our database is MySQL 8.0 running on RDS.",
+      "expected_ops": {
+        "should_store": true,
+        "store_should_contain": ["MySQL", "8.0", "RDS"],
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "New database information."
+    },
+    {
+      "turn_id": 3,
+      "user_message": "Wait, I need to correct myself — we actually switched to PostgreSQL last month. Sorry about that.",
+      "expected_ops": {
+        "should_store": false,
+        "should_update": true,
+        "update_target": "database from MySQL to PostgreSQL",
+        "should_retrieve": false
+      },
+      "response_context": "User correcting database type. MUST update, not store a new memory alongside MySQL."
+    },
+    {
+      "turn_id": 4,
+      "user_message": "The app is a Python Flask application with about 20 API endpoints.",
+      "expected_ops": {
+        "should_store": true,
+        "store_should_contain": ["Python", "Flask", "API"],
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "New application information."
+    },
+    {
+      "turn_id": 5,
+      "user_message": "Actually, we migrated to FastAPI last sprint. I keep mixing them up.",
+      "expected_ops": {
+        "should_store": false,
+        "should_update": true,
+        "update_target": "framework from Flask to FastAPI",
+        "should_retrieve": false
+      },
+      "response_context": "Another correction. MUST update the Flask memory to FastAPI."
+    },
+    {
+      "turn_id": 6,
+      "user_message": "So to summarize — what do you have recorded about our setup?",
+      "expected_ops": {
+        "should_store": false,
+        "should_update": false,
+        "should_retrieve": true,
+        "must_recall_correctly": "PostgreSQL (not MySQL), FastAPI (not Flask), AWS ECS with Docker"
+      },
+      "response_context": "Tests that corrections were properly applied. Must have PostgreSQL and FastAPI, NOT MySQL and Flask."
+    },
+    {
+      "turn_id": 7,
+      "user_message": "Perfect, that's right. One more thing — we're also using Redis for caching and Celery for background tasks.",
+      "expected_ops": {
+        "should_store": true,
+        "store_should_contain": ["Redis", "Celery"],
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "Additional infrastructure information."
+    },
+    {
+      "turn_id": 8,
+      "user_message": "Thanks for keeping track of all that!",
+      "expected_ops": {
+        "should_store": false,
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "Casual acknowledgment. Should NOT store anything."
+    }
+  ],
+
+  "ground_truth": {
+    "final_memory_should_contain": [
+      "PostgreSQL",
+      "FastAPI",
+      "AWS ECS Docker",
+      "Redis caching",
+      "Celery background tasks"
+    ],
+    "final_memory_should_not_contain": [
+      "MySQL as the database",
+      "Flask as the framework"
+    ],
+    "correct_epistemic_behavior": [
+      "Store initial factual information about the deployment",
+      "When user corrects MySQL to PostgreSQL, UPDATE the existing memory rather than creating a new one",
+      "When user corrects Flask to FastAPI, UPDATE the existing memory rather than creating a new one",
+      "At turn 6, correctly recall PostgreSQL and FastAPI (not MySQL/Flask)",
+      "Do NOT store the casual 'thanks' message at turn 8",
+      "Final memory should be clean — no contradictory entries about MySQL or Flask"
+    ],
+    "incorrect_behaviors": [
+      "Creating new memories for corrections instead of updating existing ones",
+      "Having both MySQL and PostgreSQL in final memory",
+      "Having both Flask and FastAPI in final memory",
+      "Storing the casual acknowledgment at turn 8",
+      "Not recognizing corrections as updates to existing information"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.85,
+      "tolerance": 0.1,
+      "key_claims": [
+        {"claim": "The system properly updates on user corrections", "is_true": true},
+        {"claim": "The final memory contains MySQL", "is_true": false},
+        {"claim": "The final memory contains Flask", "is_true": false},
+        {"claim": "The system stores casual chat messages", "is_true": false}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": [],
+      "necessary_memories": [],
+      "helpful_memories": [],
+      "irrelevant_memories": []
+    },
+    "degradation": {
+      "expected_behavior": "clean_correction_handling",
+      "should_update_not_duplicate": true,
+      "should_handle_corrections": true,
+      "should_not_store_casual": true
+    }
+  }
+}

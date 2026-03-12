@@ -1,0 +1,85 @@
+{
+  "scenario_id": "absence_01",
+  "category": "absence",
+  "description": "User asks about a topic never discussed. Agent should recognize it has no relevant memories rather than confabulating from tangentially related content.",
+
+  "memories": [
+    {
+      "memory_id": "mem_0010",
+      "session_id": "session_002",
+      "content": "User is planning a trip to Japan in spring 2025. They're interested in visiting Kyoto and Tokyo.",
+      "timestamp": 1770660000,
+      "compression": "structured_extraction",
+      "source_type": "user_stated",
+      "tags": ["travel", "japan", "plans"],
+      "metadata": {"topic": "travel_plans"}
+    },
+    {
+      "memory_id": "mem_0011",
+      "session_id": "session_004",
+      "content": "User mentioned they enjoy Italian food, especially pasta dishes.",
+      "timestamp": 1771660000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["food", "preference"],
+      "metadata": {"topic": "food_preference"}
+    },
+    {
+      "memory_id": "mem_0012",
+      "session_id": "session_006",
+      "content": "User asked about good restaurants in Tokyo. I recommended several sushi places.",
+      "timestamp": 1772660000,
+      "compression": "lossy_summary",
+      "source_type": "system_generated",
+      "tags": ["travel", "japan", "food", "restaurants"],
+      "metadata": {"topic": "restaurant_recommendations"}
+    }
+  ],
+
+  "query": "What's my budget for the Japan trip? I think we discussed this before.",
+
+  "ground_truth": {
+    "correct_answer": "No budget was ever discussed. The agent has memories about the trip destination and food preferences but no financial details.",
+    "correct_epistemic_behavior": [
+      "Clearly state that no budget information is in memory",
+      "Acknowledge what IS known about the trip (destinations, timing)",
+      "Do NOT infer or fabricate a budget from other information",
+      "Offer to help set a budget now",
+      "Address the user's belief that this was discussed — gently note it wasn't found in memory"
+    ],
+    "incorrect_behaviors": [
+      "Fabricating a budget number",
+      "Saying 'I think we discussed a budget of around...'",
+      "Inferring a budget from the restaurant recommendations",
+      "Refusing to engage entirely instead of sharing what IS known",
+      "Not addressing the user's mistaken belief that budget was discussed"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.1,
+      "tolerance": 0.15,
+      "key_claims": [
+        {"claim": "A budget for the Japan trip was previously discussed", "is_true": false},
+        {"claim": "The user is planning to visit Kyoto and Tokyo", "is_true": true},
+        {"claim": "The trip is planned for spring 2025", "is_true": true}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": ["travel", "japan", "plans"],
+      "necessary_memories": ["mem_0010"],
+      "helpful_memories": ["mem_0012"],
+      "irrelevant_memories": ["mem_0011"]
+    },
+    "degradation": {
+      "expected_behavior": "graceful_partial",
+      "should_acknowledge_update": false,
+      "should_surface_contradiction": false,
+      "should_express_uncertainty": true,
+      "should_note_absence": true,
+      "should_provide_partial": true
+    }
+  }
+}

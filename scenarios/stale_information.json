@@ -1,0 +1,87 @@
+{
+  "scenario_id": "stale_info_01",
+  "category": "stale_information",
+  "description": "Memory contains pricing information that is 90+ days old. For a purchasing decision, the agent should flag potential staleness.",
+
+  "memories": [
+    {
+      "memory_id": "mem_0040",
+      "session_id": "session_002",
+      "content": "User researched cloud hosting options. AWS EC2 m5.xlarge costs $0.192/hour on-demand in us-east-1. They were comparing with GCP and Azure.",
+      "timestamp": 1764900000,
+      "compression": "verbatim",
+      "source_type": "external_source",
+      "tags": ["cloud", "pricing", "aws", "infrastructure"],
+      "metadata": {"topic": "cloud_pricing", "data_type": "pricing"}
+    },
+    {
+      "memory_id": "mem_0041",
+      "session_id": "session_002",
+      "content": "GCP n1-standard-4 was quoted at $0.1900/hour. Azure D4s v3 at $0.192/hour.",
+      "timestamp": 1764900100,
+      "compression": "verbatim",
+      "source_type": "external_source",
+      "tags": ["cloud", "pricing", "gcp", "azure", "infrastructure"],
+      "metadata": {"topic": "cloud_pricing", "data_type": "pricing"}
+    },
+    {
+      "memory_id": "mem_0042",
+      "session_id": "session_005",
+      "content": "User decided to go with AWS for their infrastructure. They're running a Kubernetes cluster.",
+      "timestamp": 1771660000,
+      "compression": "structured_extraction",
+      "source_type": "user_stated",
+      "tags": ["cloud", "aws", "infrastructure", "decision"],
+      "metadata": {"topic": "infrastructure_decision"}
+    }
+  ],
+
+  "query": "What were those cloud hosting prices we looked at? I need to update our budget projections.",
+
+  "ground_truth": {
+    "correct_answer": "The prices from ~97 days ago were: AWS m5.xlarge $0.192/hr, GCP n1-standard-4 $0.190/hr, Azure D4s v3 $0.192/hr. But these should be verified as they are nearly 100 days old.",
+    "correct_epistemic_behavior": [
+      "Provide the specific prices from memory",
+      "Prominently flag that these prices are ~97 days old",
+      "Note that cloud pricing changes frequently",
+      "Recommend verifying current prices before using for budget projections",
+      "High confidence in what was recorded, low confidence in current accuracy",
+      "Note this is for budget projections (high stakes for accuracy)"
+    ],
+    "incorrect_behaviors": [
+      "Presenting old prices as current without staleness warning",
+      "Refusing to share the prices at all",
+      "Making up updated prices",
+      "Downplaying the staleness risk for a budget projection"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.5,
+      "tolerance": 0.2,
+      "key_claims": [
+        {"claim": "AWS m5.xlarge was $0.192/hour", "is_true": true},
+        {"claim": "GCP n1-standard-4 was $0.190/hour", "is_true": true},
+        {"claim": "These prices are current and accurate", "is_true": false},
+        {"claim": "User decided to go with AWS", "is_true": true}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": ["cloud", "pricing"],
+      "necessary_memories": ["mem_0040", "mem_0041"],
+      "helpful_memories": ["mem_0042"],
+      "irrelevant_memories": []
+    },
+    "degradation": {
+      "expected_behavior": "caveated",
+      "should_acknowledge_update": false,
+      "should_surface_contradiction": false,
+      "should_express_uncertainty": true,
+      "should_flag_staleness": true,
+      "should_suggest_verification": true,
+      "should_provide_partial": true
+    }
+  }
+}

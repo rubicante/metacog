@@ -1,0 +1,71 @@
+{
+  "scenario_id": "stakes_low_01",
+  "category": "stakes_calibration",
+  "description": "Low-stakes casual question about a preference. Same memory quality as stakes_calibration but casual context. Agent should be relaxed.",
+
+  "memories": [
+    {
+      "memory_id": "mem_0110",
+      "session_id": "session_003",
+      "content": "User mentioned they prefer dark mode in all their applications.",
+      "timestamp": 1771060000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["preference", "ui"],
+      "metadata": {"topic": "ui_preference"}
+    },
+    {
+      "memory_id": "mem_0111",
+      "session_id": "session_005",
+      "content": "User uses VS Code as their primary editor with the One Dark Pro theme.",
+      "timestamp": 1771660000,
+      "compression": "structured_extraction",
+      "source_type": "inferred",
+      "tags": ["tools", "editor", "preference"],
+      "metadata": {"topic": "editor_setup"}
+    }
+  ],
+
+  "query": "What theme do I use in my editor again? I'm setting up a new machine.",
+
+  "ground_truth": {
+    "correct_answer": "One Dark Pro theme in VS Code. Dark mode preference across applications.",
+    "correct_epistemic_behavior": [
+      "Answer directly and casually — this is low stakes",
+      "State the theme (One Dark Pro) and editor (VS Code) confidently",
+      "May mention the general dark mode preference as helpful context",
+      "No need for extensive caveats or verification recommendations"
+    ],
+    "incorrect_behaviors": [
+      "Being overly cautious for a simple preference question",
+      "Recommending the user verify their own theme preference",
+      "Expressing significant uncertainty",
+      "Adding medical-style disclaimers to a theme preference"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.85,
+      "tolerance": 0.15,
+      "key_claims": [
+        {"claim": "User uses One Dark Pro theme", "is_true": true},
+        {"claim": "User uses VS Code", "is_true": true},
+        {"claim": "User prefers dark mode", "is_true": true}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": ["preference", "editor", "tools"],
+      "necessary_memories": ["mem_0111"],
+      "helpful_memories": ["mem_0110"],
+      "irrelevant_memories": []
+    },
+    "degradation": {
+      "expected_behavior": "confident",
+      "should_acknowledge_update": false,
+      "should_surface_contradiction": false,
+      "should_express_uncertainty": false
+    }
+  }
+}

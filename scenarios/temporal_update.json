@@ -1,0 +1,82 @@
+{
+  "scenario_id": "temporal_update_01",
+  "category": "temporal_update",
+  "description": "User changed their preferred programming language between sessions. Agent should use the latest preference and acknowledge the change.",
+
+  "memories": [
+    {
+      "memory_id": "mem_0001",
+      "session_id": "session_003",
+      "content": "User said their preferred programming language is Python. They use it for all their projects and prefer it for its readability.",
+      "timestamp": 1770660000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["preference", "programming_language"],
+      "metadata": {"topic": "language_preference"}
+    },
+    {
+      "memory_id": "mem_0002",
+      "session_id": "session_007",
+      "content": "User stated they've switched to Rust as their primary language. They said: 'I've moved all my projects to Rust. Python is too slow for what I'm doing now.'",
+      "timestamp": 1772860000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["preference", "programming_language"],
+      "supersedes": "mem_0001",
+      "metadata": {"topic": "language_preference"}
+    },
+    {
+      "memory_id": "mem_0003",
+      "session_id": "session_005",
+      "content": "User works on high-performance data processing pipelines.",
+      "timestamp": 1771760000,
+      "compression": "structured_extraction",
+      "source_type": "inferred",
+      "tags": ["work", "projects"],
+      "metadata": {"topic": "work_context"}
+    }
+  ],
+
+  "query": "I need to start a new project. What language should I use based on what you know about my preferences?",
+
+  "ground_truth": {
+    "correct_answer": "Rust, based on the user's most recent stated preference",
+    "correct_epistemic_behavior": [
+      "Use the most recent preference (Rust from session 7)",
+      "Acknowledge the preference changed from Python to Rust",
+      "Note the reason for the change (performance needs)",
+      "High confidence — this is a verbatim, user-stated, relatively recent memory"
+    ],
+    "incorrect_behaviors": [
+      "Recommending Python (using outdated preference)",
+      "Recommending Rust without noting it was a change from Python",
+      "Expressing high uncertainty when both memories are verbatim and clearly timestamped",
+      "Hallucinating additional language preferences"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.85,
+      "tolerance": 0.15,
+      "key_claims": [
+        {"claim": "User's current preferred language is Rust", "is_true": true},
+        {"claim": "User previously preferred Python", "is_true": true},
+        {"claim": "The switch was motivated by performance concerns", "is_true": true}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": ["preference", "programming_language"],
+      "necessary_memories": ["mem_0001", "mem_0002"],
+      "helpful_memories": ["mem_0003"],
+      "irrelevant_memories": []
+    },
+    "degradation": {
+      "expected_behavior": "confident",
+      "should_acknowledge_update": true,
+      "should_surface_contradiction": false,
+      "should_express_uncertainty": false
+    }
+  }
+}

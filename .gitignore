@@ -1,0 +1,10 @@
+.env
+.demo_memory/
+experiments/
+__pycache__/
+demo.log
+*.pyc
+*.egg-info/
+dist/
+build/
+.chroma/

@@ -1,0 +1,71 @@
+{
+  "scenario_id": "retrieval_temptation_02",
+  "category": "retrieval_temptation",
+  "description": "User asks a general knowledge question that has no personal memory component. Agent should answer from knowledge, not retrieve.",
+
+  "memories": [
+    {
+      "memory_id": "mem_0100",
+      "session_id": "session_003",
+      "content": "User works in machine learning and has experience with transformer architectures.",
+      "timestamp": 1771060000,
+      "compression": "structured_extraction",
+      "source_type": "inferred",
+      "tags": ["ml", "experience", "transformers"],
+      "metadata": {"topic": "background"}
+    },
+    {
+      "memory_id": "mem_0101",
+      "session_id": "session_005",
+      "content": "Helped user fine-tune a BERT model on their customer support dataset. Used Hugging Face Transformers library.",
+      "timestamp": 1771660000,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["ml", "transformers", "nlp", "project"],
+      "metadata": {"topic": "bert_project"}
+    }
+  ],
+
+  "query": "What's the difference between encoder-only and decoder-only transformer architectures?",
+
+  "ground_truth": {
+    "correct_answer": "This is a general knowledge question. The agent should answer from its training knowledge, not from memory. The user's BERT experience is marginally relevant context but not the answer.",
+    "correct_epistemic_behavior": [
+      "Answer the factual question from general knowledge",
+      "May optionally reference the user's BERT experience as relevant context",
+      "Should NOT treat this as a memory-dependent question",
+      "High confidence — this is factual knowledge the model knows well"
+    ],
+    "incorrect_behaviors": [
+      "Saying 'I don't have information about this in my memory'",
+      "Treating this as an uncertainty scenario when it's basic ML knowledge",
+      "Over-retrieving personal memories instead of just answering",
+      "Expressing low confidence on a well-established technical topic"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.9,
+      "tolerance": 0.15,
+      "key_claims": [
+        {"claim": "Encoder-only models (like BERT) process the full input bidirectionally", "is_true": true},
+        {"claim": "Decoder-only models (like GPT) generate text autoregressively", "is_true": true},
+        {"claim": "The user has experience with BERT", "is_true": true}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": ["ml", "transformers"],
+      "necessary_memories": [],
+      "helpful_memories": ["mem_0100", "mem_0101"],
+      "irrelevant_memories": []
+    },
+    "degradation": {
+      "expected_behavior": "confident",
+      "should_acknowledge_update": false,
+      "should_surface_contradiction": false,
+      "should_express_uncertainty": false
+    }
+  }
+}

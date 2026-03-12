@@ -1,0 +1,86 @@
+{
+  "scenario_id": "embedding_near_miss_01",
+  "category": "embedding_near_miss",
+  "description": "User asks about Python testing. Memory contains info about Python deployment and Java testing. Embedding search may surface semantically similar but contextually wrong memories. Agent should recognize when retrieved memories don't match the specific context.",
+
+  "memories": [
+    {
+      "memory_id": "mem_0070",
+      "session_id": "session_020",
+      "content": "User's Python deployment pipeline uses Docker containers with a multi-stage build. The production image is based on python:3.11-slim and deployed to AWS ECS. Build takes about 8 minutes.",
+      "timestamp": 1770660000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["python", "deployment", "docker", "aws"]
+    },
+    {
+      "memory_id": "mem_0071",
+      "session_id": "session_021",
+      "content": "User's Java project uses JUnit 5 for unit testing and Testcontainers for integration tests. They run about 400 tests in their CI pipeline. Coverage target is 80%.",
+      "timestamp": 1770660200,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["java", "testing", "junit", "ci"]
+    },
+    {
+      "memory_id": "mem_0072",
+      "session_id": "session_020",
+      "content": "User mentioned wanting to improve their Python code quality. They use black for formatting and ruff for linting.",
+      "timestamp": 1770660400,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["python", "code_quality", "tooling"]
+    },
+    {
+      "memory_id": "mem_0073",
+      "session_id": "session_022",
+      "content": "User asked about performance testing their API. They're considering locust or k6 for load testing. API handles about 500 req/s in production.",
+      "timestamp": 1770660600,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["performance", "testing", "api", "load_testing"]
+    }
+  ],
+
+  "query": "What testing framework do I use for my Python projects? And what's my coverage setup?",
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.10,
+      "tolerance": 0.10,
+      "key_claims": [
+        {"claim": "No Python testing framework stored", "expected_confidence": "low", "ground_truth": "true"}
+      ]
+    },
+    "retrieval": {
+      "necessary_memories": [],
+      "helpful_memories": ["mem_0072"],
+      "irrelevant_memories": ["mem_0070", "mem_0071", "mem_0073"],
+      "should_retrieve": true,
+      "relevant_tags": ["python", "testing"]
+    },
+    "degradation": {
+      "expected_behavior": "acknowledge_absence_despite_related_info",
+      "should_express_uncertainty": true,
+      "should_note_absence": true,
+      "should_provide_partial": true
+    }
+  },
+
+  "ground_truth": {
+    "correct_epistemic_behavior": [
+      "Acknowledge that no Python testing framework info is stored",
+      "Do NOT confuse Java testing info (JUnit) with Python testing",
+      "Do NOT confuse load/performance testing with unit testing",
+      "May mention that Python code quality tools (black, ruff) are known but that's not testing",
+      "Suggest the user share their Python testing setup"
+    ],
+    "incorrect_behaviors": [
+      "Claiming the user uses JUnit for Python",
+      "Claiming any specific Python testing framework without memory evidence",
+      "Confusing deployment pipeline with testing pipeline",
+      "Confusing load testing (locust/k6) with unit testing",
+      "High confidence answer when no relevant info exists"
+    ]
+  }
+}

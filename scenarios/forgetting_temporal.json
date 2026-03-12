@@ -1,0 +1,292 @@
+{
+  "scenario_id": "forgetting_temporal_01",
+  "category": "forgetting_policy",
+  "description": "Memory store contains a mix of permanent facts and ephemeral status updates. The forgetting policy must recognize that status updates decay faster than architectural decisions or preferences.",
+
+  "forgetting_config": {
+    "target_count": 10,
+    "evaluation_type": "forgetting"
+  },
+
+  "memories": [
+    {
+      "memory_id": "mem_t001",
+      "session_id": "session_001",
+      "content": "User's preferred programming language is TypeScript. They've used it for 4 years.",
+      "timestamp": 1766000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["preferences", "languages"],
+      "metadata": {"topic": "language_preference", "access_count": 7}
+    },
+    {
+      "memory_id": "mem_t002",
+      "session_id": "session_001",
+      "content": "Project architecture: monorepo using Turborepo, with packages for shared types, UI components, and API client.",
+      "timestamp": 1766000100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["architecture", "project"],
+      "metadata": {"topic": "architecture", "access_count": 5}
+    },
+    {
+      "memory_id": "mem_t003",
+      "session_id": "session_002",
+      "content": "Deploy status: v2.3.1 is in staging. Waiting for QA sign-off.",
+      "timestamp": 1767000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["deployment", "status"],
+      "metadata": {"topic": "deploy_status", "access_count": 0}
+    },
+    {
+      "memory_id": "mem_t004",
+      "session_id": "session_002",
+      "content": "Current sprint goal: implement user dashboard v2 with analytics charts.",
+      "timestamp": 1767000100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["sprint", "status"],
+      "metadata": {"topic": "sprint_goal", "access_count": 0}
+    },
+    {
+      "memory_id": "mem_t005",
+      "session_id": "session_003",
+      "content": "Database schema uses a multi-tenant architecture with row-level security in PostgreSQL. Each tenant has a tenant_id column in all tables.",
+      "timestamp": 1768000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["architecture", "database"],
+      "metadata": {"topic": "db_architecture", "access_count": 6}
+    },
+    {
+      "memory_id": "mem_t006",
+      "session_id": "session_003",
+      "content": "Deploy status: v2.3.1 deployed to production. No issues reported.",
+      "timestamp": 1768000100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["deployment", "status"],
+      "metadata": {"topic": "deploy_status", "access_count": 0},
+      "supersedes": "mem_t003"
+    },
+    {
+      "memory_id": "mem_t007",
+      "session_id": "session_004",
+      "content": "Sprint retrospective: dashboard v2 shipped on time. Users gave positive feedback on the new charts.",
+      "timestamp": 1769000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["sprint", "status", "feedback"],
+      "metadata": {"topic": "retro", "access_count": 0}
+    },
+    {
+      "memory_id": "mem_t008",
+      "session_id": "session_004",
+      "content": "New sprint goal: implement notification system with email and in-app notifications.",
+      "timestamp": 1769000100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["sprint", "status"],
+      "metadata": {"topic": "sprint_goal", "access_count": 1},
+      "supersedes": "mem_t004"
+    },
+    {
+      "memory_id": "mem_t009",
+      "session_id": "session_005",
+      "content": "User's testing strategy: Jest for unit tests, Playwright for E2E tests. Coverage target is 80%.",
+      "timestamp": 1770000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["testing", "tools", "standards"],
+      "metadata": {"topic": "testing_strategy", "access_count": 3}
+    },
+    {
+      "memory_id": "mem_t010",
+      "session_id": "session_005",
+      "content": "Deploy status: v2.4.0 deployed with notification system. Email notifications via SendGrid, in-app via WebSocket.",
+      "timestamp": 1770000100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["deployment", "status", "notifications"],
+      "metadata": {"topic": "deploy_status", "access_count": 0},
+      "supersedes": "mem_t006"
+    },
+    {
+      "memory_id": "mem_t011",
+      "session_id": "session_006",
+      "content": "Bug report: notification emails sometimes sent twice. Investigating race condition in the email queue.",
+      "timestamp": 1771000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["bugs", "notifications", "status"],
+      "metadata": {"topic": "bug_report", "access_count": 1}
+    },
+    {
+      "memory_id": "mem_t012",
+      "session_id": "session_006",
+      "content": "Fixed duplicate email bug. Root cause: missing idempotency key in the SendGrid integration. Added deduplication using message_id.",
+      "timestamp": 1771000100,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["bugs", "notifications", "debugging"],
+      "metadata": {"topic": "bug_fix", "access_count": 0},
+      "supersedes": "mem_t011"
+    },
+    {
+      "memory_id": "mem_t013",
+      "session_id": "session_007",
+      "content": "API design convention: all endpoints return JSON with {data, error, meta} envelope. Pagination uses cursor-based approach.",
+      "timestamp": 1771500000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["architecture", "api", "standards"],
+      "metadata": {"topic": "api_conventions", "access_count": 4}
+    },
+    {
+      "memory_id": "mem_t014",
+      "session_id": "session_007",
+      "content": "Deploy status: v2.4.1 hotfix deployed. Fixes the duplicate email issue.",
+      "timestamp": 1771500100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["deployment", "status"],
+      "metadata": {"topic": "deploy_status", "access_count": 0},
+      "supersedes": "mem_t010"
+    },
+    {
+      "memory_id": "mem_t015",
+      "session_id": "session_008",
+      "content": "New sprint goal: implement billing and subscription management using Stripe.",
+      "timestamp": 1772000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["sprint", "status", "billing"],
+      "metadata": {"topic": "sprint_goal", "access_count": 2},
+      "supersedes": "mem_t008"
+    },
+    {
+      "memory_id": "mem_t016",
+      "session_id": "session_008",
+      "content": "User wants to use Stripe Billing with metered usage pricing. Each tenant pays per API call over a free tier of 1000 calls/month.",
+      "timestamp": 1772000100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["billing", "architecture", "stripe"],
+      "metadata": {"topic": "billing_design", "access_count": 3}
+    },
+    {
+      "memory_id": "mem_t017",
+      "session_id": "session_009",
+      "content": "Helped implement Stripe subscription webhook handlers. Events: invoice.paid, invoice.payment_failed, customer.subscription.updated.",
+      "timestamp": 1772500000,
+      "compression": "structured_extraction",
+      "source_type": "system_generated",
+      "tags": ["billing", "stripe", "implementation"],
+      "metadata": {"topic": "stripe_implementation", "access_count": 1}
+    },
+    {
+      "memory_id": "mem_t018",
+      "session_id": "session_009",
+      "content": "Deploy status: v2.5.0 in staging with billing feature. Stripe test mode connected. Running beta test with 3 tenants.",
+      "timestamp": 1772500100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["deployment", "status", "billing"],
+      "metadata": {"topic": "deploy_status", "access_count": 1},
+      "supersedes": "mem_t014"
+    },
+    {
+      "memory_id": "mem_t019",
+      "session_id": "session_010",
+      "content": "User's error handling convention: all errors wrapped in AppError class with code, message, and statusCode. Errors logged to Sentry.",
+      "timestamp": 1772800000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["architecture", "standards", "error_handling"],
+      "metadata": {"topic": "error_conventions", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_t020",
+      "session_id": "session_010",
+      "content": "Current sprint status: billing beta going well. 2 of 3 test tenants migrated to paid plans. One bug with metered usage reporting — overcounting by ~5%.",
+      "timestamp": 1772800100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["sprint", "status", "billing", "bugs"],
+      "metadata": {"topic": "sprint_status", "access_count": 1}
+    }
+  ],
+
+  "query": "Memory is getting long. Trim to 10 memories — keep what helps you assist me going forward.",
+
+  "ground_truth": {
+    "correct_answer": "The policy should keep permanent architectural decisions, conventions, preferences, and current project state. It should discard old deploy statuses, completed sprint goals, and resolved bugs. The latest deploy status and current sprint status may be worth keeping since they reflect active state.",
+    "must_keep": [
+      "mem_t001",
+      "mem_t002",
+      "mem_t005",
+      "mem_t013",
+      "mem_t016",
+      "mem_t019"
+    ],
+    "should_discard": [
+      "mem_t003",
+      "mem_t004",
+      "mem_t006",
+      "mem_t007",
+      "mem_t008",
+      "mem_t010",
+      "mem_t011",
+      "mem_t014"
+    ],
+    "can_compress": [
+      "mem_t009",
+      "mem_t012",
+      "mem_t015",
+      "mem_t017"
+    ],
+    "correct_epistemic_behavior": [
+      "Recognize that deploy statuses are ephemeral — only the latest matters, and even that decays quickly",
+      "Keep architectural decisions and conventions (these are permanent)",
+      "Keep user preferences (permanent)",
+      "Discard completed sprint goals and retrospectives — they're historical, not actionable",
+      "Keep the current billing design and latest sprint status (active project context)",
+      "Recognize supersession chains: each deploy status supersedes the previous"
+    ],
+    "incorrect_behaviors": [
+      "Keeping old deploy statuses (v2.3.1, v2.4.0, v2.4.1) when v2.5.0 is the latest",
+      "Keeping completed sprint goals (dashboard v2, notification system) as if they're current",
+      "Discarding architectural conventions that inform future code suggestions",
+      "Treating all memories as equally persistent — not recognizing the ephemeral nature of status updates",
+      "Keeping the resolved bug report alongside its fix (redundant)"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.85,
+      "tolerance": 0.1,
+      "key_claims": [
+        {"claim": "Old deploy statuses should be discarded", "is_true": true},
+        {"claim": "Architectural conventions should be kept", "is_true": true},
+        {"claim": "Completed sprint goals are still relevant", "is_true": false},
+        {"claim": "The latest project state (billing) should be preserved", "is_true": true}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": [],
+      "necessary_memories": [],
+      "helpful_memories": [],
+      "irrelevant_memories": []
+    },
+    "degradation": {
+      "expected_behavior": "principled_forgetting",
+      "should_recognize_ephemeral": true,
+      "should_keep_permanent": true,
+      "should_discard_superseded": true,
+      "should_explain_reasoning": true
+    }
+  }
+}

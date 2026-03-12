@@ -1,0 +1,74 @@
+{
+  "scenario_id": "high_fidelity_01",
+  "category": "high_fidelity_recall",
+  "description": "Memory has a verbatim, recent record that directly answers the question. Agent should answer with high confidence.",
+
+  "memories": [
+    {
+      "memory_id": "mem_0050",
+      "session_id": "session_010",
+      "content": "User's API endpoint configuration: Base URL is https://api.acmecorp.com/v2, API key is stored in environment variable ACME_API_KEY, rate limit is 1000 requests/minute, timeout is 30 seconds. Authentication uses Bearer token in the Authorization header.",
+      "timestamp": 1772860000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["api", "configuration", "acmecorp"],
+      "metadata": {"topic": "api_config"}
+    },
+    {
+      "memory_id": "mem_0051",
+      "session_id": "session_010",
+      "content": "User also configured a webhook endpoint at https://api.acmecorp.com/v2/webhooks/ingest with HMAC-SHA256 signature verification.",
+      "timestamp": 1772860100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["api", "configuration", "acmecorp", "webhooks"],
+      "metadata": {"topic": "api_config"}
+    }
+  ],
+
+  "query": "What's the rate limit for the Acme API and what authentication method do we use?",
+
+  "ground_truth": {
+    "correct_answer": "Rate limit is 1000 requests/minute. Authentication uses Bearer token in the Authorization header, with the key stored in ACME_API_KEY environment variable.",
+    "correct_epistemic_behavior": [
+      "State the rate limit (1000 req/min) directly and confidently",
+      "State the auth method (Bearer token) directly and confidently",
+      "This is a verbatim, recent, user-stated memory — high confidence is appropriate",
+      "No hedging or unnecessary caveats needed",
+      "May mention the env variable name as helpful context"
+    ],
+    "incorrect_behaviors": [
+      "Hedging about the rate limit or auth method",
+      "Expressing uncertainty when the memory is verbatim and recent",
+      "Adding unnecessary caveats about potential changes",
+      "Getting the values wrong",
+      "Over-qualifying with 'according to my records' or similar weak framing"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.95,
+      "tolerance": 0.1,
+      "key_claims": [
+        {"claim": "Rate limit is 1000 requests per minute", "is_true": true},
+        {"claim": "Authentication uses Bearer token", "is_true": true},
+        {"claim": "API key is in ACME_API_KEY environment variable", "is_true": true}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": ["api", "configuration", "acmecorp"],
+      "necessary_memories": ["mem_0050"],
+      "helpful_memories": ["mem_0051"],
+      "irrelevant_memories": []
+    },
+    "degradation": {
+      "expected_behavior": "confident",
+      "should_acknowledge_update": false,
+      "should_surface_contradiction": false,
+      "should_express_uncertainty": false,
+      "should_provide_partial": false
+    }
+  }
+}

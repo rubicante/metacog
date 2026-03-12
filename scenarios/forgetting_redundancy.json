@@ -1,0 +1,341 @@
+{
+  "scenario_id": "forgetting_redundancy_01",
+  "category": "forgetting_policy",
+  "description": "Memory store has many redundant memories covering the same topics at different fidelity levels. The forgetting policy must recognize redundancy and keep only the best version of each fact.",
+
+  "forgetting_config": {
+    "target_count": 12,
+    "evaluation_type": "forgetting"
+  },
+
+  "memories": [
+    {
+      "memory_id": "mem_r001",
+      "session_id": "session_001",
+      "content": "User works on a machine learning project.",
+      "timestamp": 1768000000,
+      "compression": "lossy_summary",
+      "source_type": "system_generated",
+      "tags": ["project", "ml"],
+      "metadata": {"topic": "project_info", "original_length": 450, "summary_length": 42, "compression_ratio": 0.09, "access_count": 1}
+    },
+    {
+      "memory_id": "mem_r002",
+      "session_id": "session_003",
+      "content": "User's ML project uses PyTorch for model training, FastAPI for the serving layer, and PostgreSQL for storing predictions. The model is a transformer-based text classifier for customer support ticket routing.",
+      "timestamp": 1770000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["project", "ml", "tech_stack"],
+      "metadata": {"topic": "project_details", "access_count": 6}
+    },
+    {
+      "memory_id": "mem_r003",
+      "session_id": "session_005",
+      "content": "ML project uses PyTorch and FastAPI.",
+      "timestamp": 1771000000,
+      "compression": "lossy_summary",
+      "source_type": "system_generated",
+      "tags": ["project", "ml", "tech_stack"],
+      "metadata": {"topic": "project_tech", "original_length": 380, "summary_length": 38, "compression_ratio": 0.10, "access_count": 0}
+    },
+    {
+      "memory_id": "mem_r004",
+      "session_id": "session_002",
+      "content": "User's GPU setup: 2x NVIDIA A100 80GB on a local workstation. Training runs take about 4 hours per epoch.",
+      "timestamp": 1769000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["infrastructure", "ml", "hardware"],
+      "metadata": {"topic": "gpu_setup", "access_count": 3}
+    },
+    {
+      "memory_id": "mem_r005",
+      "session_id": "session_004",
+      "content": "User has A100 GPUs for training.",
+      "timestamp": 1770500000,
+      "compression": "lossy_summary",
+      "source_type": "system_generated",
+      "tags": ["infrastructure", "ml", "hardware"],
+      "metadata": {"topic": "gpu_info", "original_length": 290, "summary_length": 34, "compression_ratio": 0.12, "access_count": 0}
+    },
+    {
+      "memory_id": "mem_r006",
+      "session_id": "session_002",
+      "content": "Model accuracy on the test set is 94.2%. User wants to push it above 96% before production deployment.",
+      "timestamp": 1769000100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["ml", "performance", "goals"],
+      "metadata": {"topic": "model_performance", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_r007",
+      "session_id": "session_006",
+      "content": "After implementing attention pooling and data augmentation, model accuracy improved to 95.8%. Still below the 96% target.",
+      "timestamp": 1771500000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["ml", "performance", "progress"],
+      "metadata": {"topic": "model_improvement", "access_count": 3},
+      "supersedes": "mem_r006"
+    },
+    {
+      "memory_id": "mem_r008",
+      "session_id": "session_003",
+      "content": "Training data: 50,000 customer support tickets labeled across 12 categories. Data collected from Zendesk export.",
+      "timestamp": 1770000100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["ml", "data"],
+      "metadata": {"topic": "training_data", "access_count": 4}
+    },
+    {
+      "memory_id": "mem_r009",
+      "session_id": "session_005",
+      "content": "Discussed data quality issues. Found ~5% of training labels were incorrect. User is running a relabeling effort.",
+      "timestamp": 1771000100,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["ml", "data", "quality"],
+      "metadata": {"topic": "data_quality", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_r010",
+      "session_id": "session_001",
+      "content": "User prefers using Jupyter notebooks for experimentation and VS Code for production code.",
+      "timestamp": 1768000100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["preferences", "tools"],
+      "metadata": {"topic": "tool_preferences", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_r011",
+      "session_id": "session_004",
+      "content": "User mentioned they use Weights & Biases for experiment tracking.",
+      "timestamp": 1770500100,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["tools", "ml", "tracking"],
+      "metadata": {"topic": "experiment_tracking", "access_count": 3}
+    },
+    {
+      "memory_id": "mem_r012",
+      "session_id": "session_003",
+      "content": "Helped debug a CUDA out-of-memory error. Solution was reducing batch size from 64 to 32 and enabling gradient checkpointing.",
+      "timestamp": 1770000200,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["debugging", "ml", "gpu"],
+      "metadata": {"topic": "debugging", "access_count": 0}
+    },
+    {
+      "memory_id": "mem_r013",
+      "session_id": "session_005",
+      "content": "Helped debug a data loading bottleneck. Solution was increasing num_workers in DataLoader from 2 to 8.",
+      "timestamp": 1771000200,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["debugging", "ml", "performance"],
+      "metadata": {"topic": "debugging", "access_count": 0}
+    },
+    {
+      "memory_id": "mem_r014",
+      "session_id": "session_006",
+      "content": "Helped debug a tensor shape mismatch in the attention pooling layer. Fixed by adding a reshape before the pooling operation.",
+      "timestamp": 1771500100,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["debugging", "ml"],
+      "metadata": {"topic": "debugging", "access_count": 0}
+    },
+    {
+      "memory_id": "mem_r015",
+      "session_id": "session_004",
+      "content": "User's deployment target is AWS SageMaker. They want to serve the model as a real-time endpoint.",
+      "timestamp": 1770500200,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["deployment", "ml", "aws"],
+      "metadata": {"topic": "deployment_plan", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_r016",
+      "session_id": "session_006",
+      "content": "Started working on the SageMaker deployment. Using a custom inference container with FastAPI inside.",
+      "timestamp": 1771500200,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["deployment", "ml", "aws"],
+      "metadata": {"topic": "deployment_progress", "access_count": 1}
+    },
+    {
+      "memory_id": "mem_r017",
+      "session_id": "session_002",
+      "content": "User mentioned their company is called DataRoute. They handle customer support automation for mid-market SaaS companies.",
+      "timestamp": 1769000200,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["identity", "company"],
+      "metadata": {"topic": "company_info", "access_count": 5}
+    },
+    {
+      "memory_id": "mem_r018",
+      "session_id": "session_001",
+      "content": "User is building some kind of classification system.",
+      "timestamp": 1768000200,
+      "compression": "lossy_summary",
+      "source_type": "system_generated",
+      "tags": ["project", "ml"],
+      "metadata": {"topic": "project_vague", "original_length": 520, "summary_length": 46, "compression_ratio": 0.09, "access_count": 0}
+    },
+    {
+      "memory_id": "mem_r019",
+      "session_id": "session_004",
+      "content": "Discussed learning rate scheduling. User switched from constant LR to cosine annealing with warm restarts.",
+      "timestamp": 1770500300,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["ml", "training", "hyperparameters"],
+      "metadata": {"topic": "lr_scheduling", "access_count": 1}
+    },
+    {
+      "memory_id": "mem_r020",
+      "session_id": "session_006",
+      "content": "Latest training config: batch_size=32, lr=3e-4, cosine annealing, gradient checkpointing enabled, 8 dataloader workers.",
+      "timestamp": 1771500300,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["ml", "training", "config"],
+      "metadata": {"topic": "training_config", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_r021",
+      "session_id": "session_003",
+      "content": "Training config at this point: batch_size=64, lr=1e-3, no gradient checkpointing.",
+      "timestamp": 1770000300,
+      "compression": "structured_extraction",
+      "source_type": "system_generated",
+      "tags": ["ml", "training", "config"],
+      "metadata": {"topic": "old_training_config", "access_count": 0}
+    },
+    {
+      "memory_id": "mem_r022",
+      "session_id": "session_005",
+      "content": "User asked about model interpretability. Wants to add attention visualization for debugging misclassifications.",
+      "timestamp": 1771000300,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["ml", "interpretability", "plans"],
+      "metadata": {"topic": "interpretability_plans", "access_count": 1}
+    },
+    {
+      "memory_id": "mem_r023",
+      "session_id": "session_002",
+      "content": "User's ML experience: 3 years. Comfortable with PyTorch. Less familiar with deployment and MLOps.",
+      "timestamp": 1769000300,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["identity", "skills"],
+      "metadata": {"topic": "user_skills", "access_count": 2}
+    },
+    {
+      "memory_id": "mem_r024",
+      "session_id": "session_004",
+      "content": "Something about hyperparameter tuning.",
+      "timestamp": 1770500400,
+      "compression": "key_value_only",
+      "source_type": "system_generated",
+      "tags": ["ml", "training"],
+      "metadata": {"topic": "tuning", "access_count": 0}
+    },
+    {
+      "memory_id": "mem_r025",
+      "session_id": "session_006",
+      "content": "User said the 12-category classification system needs to expand to 20 categories next quarter as they onboard more ticket types.",
+      "timestamp": 1771500400,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["ml", "plans", "data"],
+      "metadata": {"topic": "expansion_plans", "access_count": 1}
+    }
+  ],
+
+  "query": "Memory is getting crowded. Reduce to 12 memories — keep what matters for ongoing work.",
+
+  "ground_truth": {
+    "correct_answer": "The policy should recognize that several memories are redundant (lossy summaries superseded by verbatim versions of the same info). It should keep the detailed project description, current model performance, current training config, deployment progress, identity info, and active plans. It should discard vague summaries, resolved debugging, and outdated configs.",
+    "must_keep": [
+      "mem_r002",
+      "mem_r004",
+      "mem_r007",
+      "mem_r008",
+      "mem_r017",
+      "mem_r020",
+      "mem_r025"
+    ],
+    "should_discard": [
+      "mem_r001",
+      "mem_r003",
+      "mem_r005",
+      "mem_r006",
+      "mem_r012",
+      "mem_r013",
+      "mem_r014",
+      "mem_r018",
+      "mem_r021",
+      "mem_r024"
+    ],
+    "can_compress": [
+      "mem_r009",
+      "mem_r015",
+      "mem_r016",
+      "mem_r019"
+    ],
+    "correct_epistemic_behavior": [
+      "Recognize that lossy summaries (mem_r001, mem_r003, mem_r005, mem_r018) are redundant with better verbatim versions",
+      "Keep the most detailed version of each fact (mem_r002 over mem_r001/mem_r003/mem_r018)",
+      "Discard superseded memories (mem_r006 superseded by mem_r007, mem_r021 by mem_r020)",
+      "Discard resolved debugging sessions that have zero access count",
+      "Keep active project state: current accuracy, training config, deployment progress",
+      "Keep identity and skill information",
+      "Keep forward-looking plans (expansion to 20 categories)"
+    ],
+    "incorrect_behaviors": [
+      "Keeping lossy summaries when verbatim versions of the same info exist",
+      "Keeping all three debugging sessions at full fidelity",
+      "Discarding the current training config or model performance numbers",
+      "Keeping outdated training configs (mem_r021) when newer ones exist (mem_r020)",
+      "Keeping the near-useless key_value_only memory (mem_r024)",
+      "Discarding user identity or skill level information"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.85,
+      "tolerance": 0.1,
+      "key_claims": [
+        {"claim": "Lossy summaries redundant with verbatim versions should be discarded", "is_true": true},
+        {"claim": "All debugging sessions should be kept", "is_true": false},
+        {"claim": "Current model performance and training config are high priority", "is_true": true},
+        {"claim": "Near-useless key_value_only memories should be discarded", "is_true": true}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": [],
+      "necessary_memories": [],
+      "helpful_memories": [],
+      "irrelevant_memories": []
+    },
+    "degradation": {
+      "expected_behavior": "principled_forgetting",
+      "should_recognize_redundancy": true,
+      "should_discard_superseded": true,
+      "should_preserve_best_version": true,
+      "should_explain_reasoning": true
+    }
+  }
+}

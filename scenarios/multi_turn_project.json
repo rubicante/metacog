@@ -1,0 +1,194 @@
+{
+  "scenario_id": "multi_turn_project_01",
+  "category": "multi_turn",
+  "description": "10-turn conversation where a user describes a project that evolves. Tests whether the agent stores the right things, updates when facts change, and retrieves when needed.",
+
+  "multi_turn_config": {
+    "evaluation_type": "multi_turn"
+  },
+
+  "initial_memories": [
+    {
+      "memory_id": "mem_init_01",
+      "session_id": "session_prev",
+      "content": "User is a frontend developer named Jordan. Works at a startup called Nexus.",
+      "timestamp": 1770000000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["identity", "user_info"],
+      "metadata": {}
+    }
+  ],
+
+  "turns": [
+    {
+      "turn_id": 1,
+      "user_message": "Hey! I'm starting a new project — building a real-time dashboard for our IoT sensors. We have about 500 sensors sending data every 10 seconds.",
+      "expected_ops": {
+        "should_store": true,
+        "store_should_contain": ["IoT", "dashboard", "500 sensors", "10 seconds"],
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "User is starting a new IoT dashboard project with 500 sensors at 10-second intervals."
+    },
+    {
+      "turn_id": 2,
+      "user_message": "I'm thinking about using WebSockets for the real-time updates. What do you think?",
+      "expected_ops": {
+        "should_store": false,
+        "should_update": false,
+        "should_retrieve": true,
+        "retrieve_should_use": ["infrastructure", "project"]
+      },
+      "response_context": "User asking for architectural advice. Should retrieve project context to give informed answer."
+    },
+    {
+      "turn_id": 3,
+      "user_message": "Good points. We'll go with WebSockets using Socket.io. The backend will be Node.js with Express.",
+      "expected_ops": {
+        "should_store": true,
+        "store_should_contain": ["WebSockets", "Socket.io", "Node.js", "Express"],
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "User made a technology decision. This should be stored."
+    },
+    {
+      "turn_id": 4,
+      "user_message": "For the database, I was thinking InfluxDB since we're dealing with time-series data. Does that make sense?",
+      "expected_ops": {
+        "should_store": false,
+        "should_update": false,
+        "should_retrieve": true,
+        "retrieve_should_use": ["project", "database"]
+      },
+      "response_context": "User considering InfluxDB. Should retrieve project context to give informed advice."
+    },
+    {
+      "turn_id": 5,
+      "user_message": "Actually, after thinking about it more, let's use TimescaleDB instead. We already have PostgreSQL experience on the team and TimescaleDB is a PostgreSQL extension, so it'll be easier.",
+      "expected_ops": {
+        "should_store": true,
+        "store_should_contain": ["TimescaleDB", "PostgreSQL"],
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "User changed their mind from InfluxDB to TimescaleDB. The decision and reasoning should be stored."
+    },
+    {
+      "turn_id": 6,
+      "user_message": "Oh, I forgot to mention — the number of sensors is actually going to be around 2000 by next quarter. We just signed a big contract.",
+      "expected_ops": {
+        "should_store": false,
+        "should_update": true,
+        "update_target": "sensor count from 500 to 2000",
+        "should_retrieve": false
+      },
+      "response_context": "User correcting earlier information. The sensor count memory should be updated, not duplicated."
+    },
+    {
+      "turn_id": 7,
+      "user_message": "Can you remind me what tech stack we decided on so far?",
+      "expected_ops": {
+        "should_store": false,
+        "should_update": false,
+        "should_retrieve": true,
+        "retrieve_should_use": ["project", "tech_stack"]
+      },
+      "response_context": "User asking for recall. Should retrieve and summarize: WebSockets/Socket.io, Node.js/Express, TimescaleDB, 2000 sensors."
+    },
+    {
+      "turn_id": 8,
+      "user_message": "Perfect. For the frontend, I'll use React with D3.js for the visualizations. The charts need to update in real-time as new data comes in.",
+      "expected_ops": {
+        "should_store": true,
+        "store_should_contain": ["React", "D3.js", "real-time"],
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "New technology decision for frontend."
+    },
+    {
+      "turn_id": 9,
+      "user_message": "Thanks for all the help today. Quick question — what's our sensor count again? I need it for the capacity planning doc.",
+      "expected_ops": {
+        "should_store": false,
+        "should_update": false,
+        "should_retrieve": true,
+        "must_recall_correctly": "2000 sensors (updated from 500)"
+      },
+      "response_context": "Tests whether the agent stored the UPDATE from turn 6. Must say 2000, not 500."
+    },
+    {
+      "turn_id": 10,
+      "user_message": "Great. Let's wrap up. One more thing — we're targeting a 3-month timeline for the MVP. Launch date is end of June.",
+      "expected_ops": {
+        "should_store": true,
+        "store_should_contain": ["3-month", "MVP", "June"],
+        "should_update": false,
+        "should_retrieve": false
+      },
+      "response_context": "New project timeline information worth storing."
+    }
+  ],
+
+  "ground_truth": {
+    "final_memory_should_contain": [
+      "IoT dashboard project",
+      "2000 sensors (not 500)",
+      "WebSockets / Socket.io",
+      "Node.js / Express backend",
+      "TimescaleDB (not InfluxDB)",
+      "React with D3.js frontend",
+      "3-month timeline, MVP by end of June"
+    ],
+    "final_memory_should_not_contain": [
+      "500 sensors as current count (should be updated to 2000)",
+      "InfluxDB as the chosen database (was changed to TimescaleDB)"
+    ],
+    "correct_epistemic_behavior": [
+      "Store new factual information (project details, tech decisions, timeline)",
+      "Update rather than duplicate when facts change (sensor count 500→2000)",
+      "Retrieve when the user asks for recall or needs context-informed advice",
+      "Do NOT store every conversational message — skip acknowledgments and questions",
+      "At turn 9, correctly recall 2000 sensors (not the original 500)",
+      "Handle the InfluxDB→TimescaleDB change cleanly (store TimescaleDB, not InfluxDB)"
+    ],
+    "incorrect_behaviors": [
+      "Storing every turn as a new memory (over-storing)",
+      "Not storing the technology decisions",
+      "Keeping 500 sensors after the user said 2000",
+      "Storing InfluxDB as the database choice (it was changed to TimescaleDB)",
+      "Failing to retrieve context when the user asks 'remind me what we decided'",
+      "Not recognizing turn 6 as an update to existing information"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.85,
+      "tolerance": 0.1,
+      "key_claims": [
+        {"claim": "The system correctly stores new project information", "is_true": true},
+        {"claim": "The system updates sensor count from 500 to 2000", "is_true": true},
+        {"claim": "The system stores InfluxDB as the database", "is_true": false},
+        {"claim": "The system retrieves context when user asks for recall", "is_true": true}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": [],
+      "necessary_memories": [],
+      "helpful_memories": [],
+      "irrelevant_memories": []
+    },
+    "degradation": {
+      "expected_behavior": "real_time_memory_management",
+      "should_store_selectively": true,
+      "should_update_not_duplicate": true,
+      "should_retrieve_when_asked": true,
+      "should_handle_corrections": true
+    }
+  }
+}

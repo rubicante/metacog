@@ -1,0 +1,97 @@
+{
+  "scenario_id": "gradual_drift_01",
+  "category": "gradual_drift",
+  "description": "User's preferences have shifted gradually across sessions without explicit supersession. Agent must recognize the trend rather than treating all memories as equally current.",
+
+  "memories": [
+    {
+      "memory_id": "mem_0160",
+      "session_id": "session_002",
+      "content": "User prefers Python for all backend work. They said 'Python is my go-to language for everything server-side.'",
+      "timestamp": 1769460000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["preferences", "languages", "backend"],
+      "metadata": {"topic": "language_preference"}
+    },
+    {
+      "memory_id": "mem_0161",
+      "session_id": "session_005",
+      "content": "User has been learning Go for a new microservices project. Said they're enjoying the performance benefits and simplicity.",
+      "timestamp": 1771260000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["preferences", "languages", "backend", "go"],
+      "metadata": {"topic": "language_learning"}
+    },
+    {
+      "memory_id": "mem_0162",
+      "session_id": "session_007",
+      "content": "User rewrote their main API service from Python to Go. Said the latency improvement was 'night and day' and they plan to migrate more services.",
+      "timestamp": 1772060000,
+      "compression": "verbatim",
+      "source_type": "user_stated",
+      "tags": ["preferences", "languages", "backend", "go", "migration"],
+      "metadata": {"topic": "language_migration"}
+    },
+    {
+      "memory_id": "mem_0163",
+      "session_id": "session_009",
+      "content": "Asked for help writing a new authentication service. Specified Go as the language without prompting.",
+      "timestamp": 1772660000,
+      "compression": "verbatim",
+      "source_type": "system_generated",
+      "tags": ["preferences", "languages", "backend", "go", "auth"],
+      "metadata": {"topic": "new_service"}
+    }
+  ],
+
+  "query": "I'm starting a new backend service for payment processing. What language should I use?",
+
+  "ground_truth": {
+    "correct_answer": "The trajectory clearly shows a shift from Python to Go. The user's most recent sessions all involve Go, they migrated their main API to Go, and they chose Go unprompted for their auth service. Go is the obvious recommendation, but note the evolution.",
+    "correct_epistemic_behavior": [
+      "Recommend Go based on the clear trajectory of recent sessions",
+      "Acknowledge the earlier Python preference but note it has been superseded by actions, not just words",
+      "Reference the concrete evidence: API migration, latency improvement, unprompted Go choice for auth service",
+      "Do NOT present Python and Go as equally weighted options — the recency and consistency of Go usage makes it the clear preference",
+      "Optionally note that Python is still in the user's toolkit if they need specific Python libraries"
+    ],
+    "incorrect_behaviors": [
+      "Recommending Python because the earliest memory says it was the user's go-to",
+      "Presenting Python and Go as a 50/50 choice with no weighting by recency",
+      "Ignoring the trajectory and treating all memories as equally current",
+      "Refusing to recommend a language because preferences 'might have changed'",
+      "Not mentioning Go at all"
+    ]
+  },
+
+  "rubric": {
+    "calibration": {
+      "expected_confidence": 0.85,
+      "tolerance": 0.1,
+      "key_claims": [
+        {"claim": "Go is the user's current preferred backend language", "is_true": true},
+        {"claim": "Python was previously the user's preferred language", "is_true": true},
+        {"claim": "The user migrated their main API from Python to Go", "is_true": true},
+        {"claim": "Python and Go are equally good choices for this user", "is_true": false}
+      ]
+    },
+    "retrieval": {
+      "should_retrieve": true,
+      "relevant_tags": ["preferences", "languages", "backend"],
+      "necessary_memories": ["mem_0161", "mem_0162", "mem_0163"],
+      "helpful_memories": ["mem_0160"],
+      "irrelevant_memories": []
+    },
+    "degradation": {
+      "expected_behavior": "recognize_temporal_trend",
+      "should_acknowledge_update": true,
+      "should_surface_contradiction": false,
+      "should_express_uncertainty": false,
+      "should_provide_partial": false,
+      "should_recognize_drift": true,
+      "should_weight_recency": true
+    }
+  }
+}
