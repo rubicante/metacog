@@ -482,6 +482,83 @@ def build_response_prompt(query: str, memory_context: str,
 
 
 # ============================================================
+# Collapsed Pipeline: Assess + Respond in One Call
+# ============================================================
+
+COLLAPSED_TOOL = {
+    "name": "assess_and_respond",
+    "description": "Assess memory quality and produce a calibrated response in a single step.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "claim_confidences": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "claim": {"type": "string", "description": "A specific factual claim"},
+                        "confidence": {"type": "number", "description": "Confidence 0.0-1.0"},
+                        "basis": {
+                            "type": "string",
+                            "enum": ["verbatim_memory", "structured_extraction",
+                                     "lossy_summary", "inference", "absence"],
+                        }
+                    },
+                    "required": ["claim", "confidence", "basis"]
+                },
+            },
+            "overall_confidence": {
+                "type": "number",
+                "description": "Overall confidence 0.0-1.0 in the response"
+            },
+            "epistemic_status": {
+                "type": "string",
+                "enum": ["confident", "caveated", "uncertain", "unable"],
+            },
+            "response": {
+                "type": "string",
+                "description": "The response to give the user, with confidence expressed naturally"
+            }
+        },
+        "required": ["claim_confidences", "overall_confidence", "epistemic_status", "response"]
+    }
+}
+
+COLLAPSED_PROMPT = """You are an AI assistant with access to a memory system. Answer the user's query using the memories provided, with calibrated confidence.
+
+## Query
+{query}
+
+## Retrieved Memories
+{memory_context}
+
+## Instructions
+1. Assess the quality of the retrieved memories for answering this query.
+2. Produce a response with appropriately expressed confidence.
+
+Calibration guidance:
+- Verbatim, recent memories → high confidence (0.90-0.95). Answer directly.
+- Structured extractions → moderate confidence (0.80-0.90).
+- Lossy summaries → lower confidence (0.40-0.70). Note what details may be missing.
+- No relevant memories → very low confidence (0.05-0.15). Say you don't have the information.
+- Contradictions → low confidence (0.20-0.40). Surface the conflict.
+
+Response rules:
+- Match length to query complexity. Simple questions get one-line answers.
+- If confident, answer directly without hedging.
+- If unable, say so briefly. Don't list what you do know or ask follow-up questions.
+- Don't make up information not in your memories."""
+
+
+def get_collapsed_tool():
+    return COLLAPSED_TOOL
+
+
+def build_collapsed_prompt(query, memory_context):
+    return COLLAPSED_PROMPT.format(query=query, memory_context=memory_context)
+
+
+# ============================================================
 # Component 4: Forgetting Policy
 # ============================================================
 

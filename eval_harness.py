@@ -44,6 +44,8 @@ from metacognition import (
     parse_turn_memory_ops,
     parse_structured_turn_ops,
     get_turn_memory_ops_tool,
+    get_collapsed_tool,
+    build_collapsed_prompt,
 )
 from memory_backend import CompressionLevel, SourceType
 
@@ -79,6 +81,9 @@ def _anthropic_tool_to_openai(tool: dict) -> dict:
 # Ablation mode — set of components to remove
 # Valid values: "planner", "anchors", "provenance", "assessor", "bare"
 ABLATIONS = set()
+
+# Collapsed pipeline mode — single LLM call for assess+respond
+COLLAPSED = False
 
 # Scenarios consistently >0.95 that can be skipped in quick mode
 STABLE_SCENARIOS = {
@@ -259,6 +264,64 @@ def load_all_scenarios(scenario_dir: str = "scenarios") -> list[dict]:
 # Pipeline: Run a scenario through the metacognitive system
 # ============================================================
 
+def _run_collapsed_pipeline(scenario, result, store, query):
+    """Collapsed pipeline: skip planner, skip separate assessor, single LLM call."""
+    # 1. Retrieve using rubric tags (no planner)
+    rubric_tags = scenario.get("rubric", {}).get("retrieval", {}).get("relevant_tags", [])
+    result.retrieval_plan = {
+        "decision": "RETRIEVE", "relevant_tags": rubric_tags,
+        "relevant_sessions": [], "needed_info": "collapsed pipeline",
+        "confidence_before": "low", "stakes": "medium",
+    }
+    result.judge_outputs["plan_raw"] = "[COLLAPSED: skipped planner, used rubric tags]"
+
+    tags = rubric_tags
+    retrieved = []
+    if BACKEND == "chroma" and (query or tags):
+        retrieved = store.retrieve_hybrid(query=query, query_tags=tags if tags else None, top_k=5)
+    elif tags:
+        retrieved = store.retrieve(query_tags=tags)
+    else:
+        retrieved = store.retrieve()
+        if not retrieved:
+            retrieved = store.get_all()
+    result.retrieved_memory_ids = [m.memory_id for m in retrieved]
+
+    # 2. Format with provenance (keep the metadata — it's part of information architecture)
+    memory_context = format_memory_context(retrieved)
+
+    # 3. Single LLM call: assess + respond
+    try:
+        prompt = build_collapsed_prompt(query, memory_context)
+        tool_output = llm_call_with_tool(
+            prompt,
+            tool=get_collapsed_tool(),
+            system="You are an AI assistant with calibrated metacognitive awareness."
+        )
+
+        # Extract confidence assessment
+        result.confidence_assessment = {
+            "confidence": tool_output.get("overall_confidence", 0.5),
+            "claim_confidences": tool_output.get("claim_confidences", []),
+            "epistemic_status": tool_output.get("epistemic_status", "uncertain"),
+            "recommended_framing": tool_output.get("epistemic_status", "uncertain"),
+        }
+        result.agent_response = tool_output.get("response", "[No response in tool output]")
+        result.judge_outputs["assessment_raw"] = json.dumps(tool_output, indent=2)
+        result.judge_outputs["assessment_structured"] = tool_output
+        result.judge_outputs["response_raw"] = result.agent_response
+    except Exception as e:
+        result.errors.append(f"Collapsed pipeline failed: {e}")
+        result.confidence_assessment = {"confidence": 0.5, "claim_confidences": [],
+                                         "epistemic_status": "uncertain",
+                                         "recommended_framing": "express uncertainty"}
+        result.agent_response = "[Failed to generate response]"
+
+    # 4. Score
+    score_result(result, scenario)
+    return result
+
+
 def run_scenario(scenario: dict) -> ScenarioResult:
     """Run a single scenario through the full metacognitive pipeline."""
     result = ScenarioResult(
@@ -269,6 +332,10 @@ def run_scenario(scenario: dict) -> ScenarioResult:
     # 1. Load memory state
     store = _make_store(scenario["memories"])
     query = scenario["query"]
+
+    # COLLAPSED PIPELINE: single LLM call for assess+respond
+    if COLLAPSED:
+        return _run_collapsed_pipeline(scenario, result, store, query)
 
     # 2. Pre-retrieval planning
     if "bare" in ABLATIONS or "planner" in ABLATIONS or QUICK_MODE:
@@ -1212,6 +1279,7 @@ def run_evaluation(scenario_dir: str = "scenarios", quick: bool = False,
         "model": OPENAI_MODEL if PROVIDER == "openai" else MODEL,
         "judge_model": OPENAI_JUDGE_MODEL if PROVIDER == "openai" else JUDGE_MODEL,
         "backend": BACKEND,
+        "collapsed": COLLAPSED,
         "ablations": sorted(ABLATIONS) if ABLATIONS else [],
         "num_scenarios": n,
         "aggregate": {
@@ -1275,12 +1343,17 @@ if __name__ == "__main__":
     parser.add_argument("--ablate", nargs="*",
                         choices=["planner", "anchors", "provenance", "assessor", "bare"],
                         help="Ablation: remove components (planner, anchors, provenance, assessor, bare=all)")
+    parser.add_argument("--collapsed", action="store_true",
+                        help="Collapsed pipeline: single LLM call for assess+respond (no planner, no separate assessor)")
     parser.add_argument("--out", default="experiments/baseline_report.json",
                         help="Output report path")
     args = parser.parse_args()
 
     BACKEND = args.backend  # noqa: module-level reassignment in __main__
     PROVIDER = args.provider  # noqa: module-level reassignment in __main__
+    if args.collapsed:
+        COLLAPSED = True
+        print("Collapsed pipeline mode: single LLM call for assess+respond")
     if args.ablate:
         ABLATIONS = set(args.ablate)
         print(f"Ablation mode: removing {', '.join(sorted(ABLATIONS))}")

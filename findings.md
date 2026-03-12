@@ -2,9 +2,9 @@
 
 ## Summary
 
-We built and empirically validated a **metacognitive policy layer** for LLM agents — a system that gives agents calibrated awareness of their own memory states. Through 24+ experiments across 26 test scenarios, we identified the design principles that make LLM metacognition work and developed a 5-component architecture that achieves 0.959 composite score with perfect retrieval, and 0.891 with real embedding-based retrieval via ChromaDB.
+We built and empirically validated a **metacognitive policy layer** for LLM agents — a system that gives agents calibrated awareness of their own memory states. Through 24 experiments across 26 test scenarios, we identified the design principles that make LLM metacognition work and developed an architecture that achieves 0.923 composite score (26 scenarios, corrected scoring).
 
-The central finding: **information architecture drives metacognitive quality more than prompt engineering.** What metadata the model can see (provenance headers, compression ratios, confidence anchors) matters far more than how prompts are worded. A secondary finding from integration testing: **the metacognitive layer partially compensates for retrieval noise** — when embedding search returns imperfect results, the confidence assessor correctly downgrades its confidence, limiting the damage to response quality.
+The central finding: **structured output schemas drive metacognitive quality.** Forcing the model to produce explicit claim-level confidences via tool_use produces well-calibrated responses regardless of whether the assessment happens in a separate call or inline with the response. The 5-component pipeline collapses to a single LLM call with no quality loss (0.917 vs 0.915 composite) and 67% cost reduction. The model's latent metacognition is strong — even a bare prompt with no scaffolding scores 0.852.
 
 ---
 
@@ -123,9 +123,11 @@ At each conversation turn, decides what memory operations to perform: STORE new 
 | GPT-4o cross-model (4C) | 26 | 26 | 0.917 | dict |
 | Scoring fix (4D) | 27 | 26 | 0.923 / 0.922 / 0.893 | dict / hybrid / GPT-4o |
 | **Ablation (5A)** | **28** | **21** | **0.852 (bare) — 0.923 (full)** | **dict** |
+| **Collapsed pipeline (5C)** | **29** | **20** | **0.917 (1 call) ≈ 0.915 (3 calls)** | **dict** |
 
 *Phase 4D: scoring fixes applied uniformly — dict/hybrid gap was a measurement artifact.*
 *Phase 5A: ablation on 21 standard scenarios. Full scaffolding adds 0.071 over bare model; the assessor accounts for nearly all of it.*
+*Phase 5C: 2-trial average on 20 standard scenarios. Single LLM call matches full pipeline with 67% cost reduction.*
 
 ### Per-Category Performance (23 scenarios, 2-trial averages)
 
@@ -240,9 +242,15 @@ The planner actively hurts performance (-0.011 when removed), and provenance + a
 
 Phase 4D revealed that the 0.068 composite gap between tag-based and hybrid retrieval was almost entirely a scoring artifact. Two bugs: (1) the LLM judge wrapping scores in markdown bold (`**SCORE: 0.95**`) caused parse failures, silently defaulting to 0.5; and (2) the judge prompt equated "confident" behavior with "false confidence," scoring perfect direct answers as 0.0. Both were systematic, not random — affecting specific scenario types consistently. This underscores Design Principle 6: reduce measurement noise before attributing gaps to model behavior.
 
-### 11. Adversarial Robustness is Strong
+### 12. Adversarial Robustness is Strong
 
 The 5 adversarial scenarios (false memory implantation, confabulation traps, authority pressure, memory poisoning, gradual drift) average 0.937. The model resists false premises, flags impossible facts, and maintains calibration under pressure. The weakest adversarial case is confabulation traps (0.891) — the model occasionally provides plausible-but-ungrounded details for queries adjacent to real memories.
+
+### 13. The Pipeline Can Collapse to a Single Call
+
+Phase 5C tested merging the 3-call pipeline (planner → assessor → response) into a single tool_use call that produces both structured confidence assessment AND the response. Result: **0.917 composite vs 0.915 for the full pipeline** (2-trial averages, 20 standard scenarios) — statistically identical, with 67% fewer LLM calls.
+
+This means the multi-stage reasoning adds no value. What matters is (a) the information architecture (provenance metadata on memories) and (b) the output structure (tool_use schema forcing explicit claim_confidences, overall_confidence, epistemic_status). The model is equally well-calibrated whether it assesses confidence in a separate call or inline with the response. The minimal production architecture is: **provenance formatting → single structured LLM call**.
 
 ---
 

@@ -384,3 +384,38 @@ Progressively removed scaffolding components, ran 21 standard scenarios (excludi
 
 ### Key Finding
 The information architecture transfers. GPT-4o scores >0.90 composite with zero prompt modification. The gap is calibration (GPT-4o less responsive to fidelity-based anchors) and degradation (response style differences), not retrieval. Model-specific anchor tuning could close most of the 0.042 gap.
+
+---
+
+## Phase 5C: Pipeline Collapse (Experiment 24)
+
+### Goal
+Merge the 3-call pipeline (planner + assessor + response) into a single LLM call. The model receives memories + query and produces both structured confidence assessment AND the response in one tool_use invocation.
+
+### Setup
+- New `COLLAPSED_TOOL` in metacognition.py: tool_use schema with `claim_confidences`, `overall_confidence`, `epistemic_status`, and `response` fields
+- `COLLAPSED_PROMPT`: single prompt with calibration guidance baked in (no separate planner or assessor prompts)
+- `--collapsed` flag in eval_harness.py routes standard scenarios through single-call pipeline
+- Provenance metadata kept (part of information architecture)
+- Planner skipped (rubric tags used for retrieval, same as ablation baseline)
+
+### Results (2-trial average, 20 standard scenarios)
+
+| Configuration | Composite | Cal Error | Retrieval | Degradation | LLM Calls |
+|---|---|---|---|---|---|
+| Full pipeline | 0.915 | 0.032 | 0.970 | 0.788 | 3 |
+| Collapsed | **0.917** | 0.031 | 0.970 | 0.794 | **1** |
+| Delta | +0.002 | -0.001 | 0.000 | +0.006 | -2 |
+
+Trial-to-trial noise: ±0.006 composite.
+
+### Interpretation
+The collapsed pipeline is statistically equivalent to the full pipeline — the +0.002 delta is well within noise. This means:
+
+1. **The planner adds no value** (confirmed by ablation: -0.001 when removed)
+2. **The separate assessor call adds no value over inline assessment** — when the model generates confidence and response together, it's just as well calibrated
+3. **67% cost reduction** with zero quality loss
+4. The structured tool_use schema is doing the work — forcing the model to produce claim_confidences, overall_confidence, and epistemic_status produces the same calibration whether it's in a separate call or combined with the response
+
+### Implication for Architecture
+The "five component" architecture can be reduced to: **provenance formatting → single LLM call with structured output**. The metacognitive quality comes from (a) the information architecture (provenance metadata on memories) and (b) the output structure (forcing explicit confidence claims), not from multi-stage reasoning.
