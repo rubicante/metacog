@@ -11,7 +11,10 @@ import time
 from pathlib import Path
 from dataclasses import dataclass, field
 
+from dotenv import load_dotenv
 import anthropic
+
+load_dotenv()
 
 from memory_backend import MemoryStore
 
@@ -826,6 +829,17 @@ def score_degradation(result: ScenarioResult, scenario: dict) -> float:
             "retained", "original record", "%"])
         checks.append(1.0 if has_compression else 0.0)
         check_details["note_compression"] = has_compression
+
+    if rubric.get("should_not_confabulate"):
+        # This is hard to check via keywords, but we can look for "Next.js 14", "Passport", etc. 
+        # for specific scenarios, or just check for common guess patterns.
+        # For now, we'll use a more heuristic check: does it mention it DOESN'T know?
+        has_not_known = any(w in response for w in [
+            "not recorded", "never discussed", "not mentioned",
+            "don't have information on", "not in my memories",
+            "unknown", "version is not", "specifics are not"])
+        checks.append(1.0 if has_not_known else 0.0)
+        check_details["not_confabulate_heuristic"] = has_not_known
 
     if rubric.get("should_suggest_verification"):
         has_verification = any(w in response for w in [

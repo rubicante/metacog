@@ -419,3 +419,20 @@ The collapsed pipeline is statistically equivalent to the full pipeline — the 
 
 ### Implication for Architecture
 The "five component" architecture can be reduced to: **provenance formatting → single LLM call with structured output**. The metacognitive quality comes from (a) the information architecture (provenance metadata on memories) and (b) the output structure (forcing explicit confidence claims), not from multi-stage reasoning.
+
+---
+
+## Phase 6: Production Refinement (Experiment 25-26)
+
+### Goal
+Modernize the production components (demo.py) and stress-test the collapsed pipeline against combined failure modes.
+
+### Experiment 25: Demo Modernization (COMPLETE)
+- **Target**: Update `demo.py` to use the Phase 5C collapsed pipeline.
+- **Change**: Replaced the 5-component sequential pipeline with a 2-step process: (1) Turn Memory Manager for state/retrieval decisions, and (2) Collapsed `assess_and_respond` tool for the response.
+- **Outcome**: Interactive performance is significantly improved (lower latency due to fewer LLM calls). 67% cost reduction for the response phase.
+
+### Experiment 26: Combined Failure Modes (IN PROGRESS)
+- **New Scenario**: `confabulation_synthesis_01` — combines multi-fidelity synthesis (verbatim + lossy) with a confabulation trap (asking for a detail not in either).
+- **Target**: Test if the `COLLAPSED_PROMPT` handles "gradient confidence" (high confidence on facts, low/absence on versions) while citing compression ratios for lossy memories.
+- **Scoring Note**: Added `should_not_confabulate` deterministic heuristic to `eval_harness.py` to better measure fabrication resistance without relying solely on LLM-as-judge.

@@ -9,7 +9,10 @@ import os
 import sys
 import time
 
+from dotenv import load_dotenv
 import anthropic
+
+load_dotenv()
 
 from memory_backend import CompressionLevel, SourceType
 from memory_backend_chroma import ChromaMemoryStore
@@ -26,6 +29,8 @@ from metacognition import (
     build_turn_memory_prompt,
     parse_structured_turn_ops,
     get_turn_memory_ops_tool,
+    get_collapsed_tool,
+    build_collapsed_prompt,
 )
 
 CLIENT = anthropic.Anthropic()
@@ -133,10 +138,10 @@ def run_forgetting(store: ChromaMemoryStore):
 
 def process_turn(store: ChromaMemoryStore, user_message: str,
                  conversation_history: str, turn_number: int) -> str:
-    """Process one conversation turn through the full metacognitive pipeline."""
+    """Process one conversation turn through the efficient collapsed pipeline."""
     session_id = "demo_session"
 
-    # 1. Turn memory manager — decide what ops to perform
+    # 1. Turn memory manager — decide what ops to perform (STORE/UPDATE/RETRIEVE)
     turn_prompt = build_turn_memory_prompt(store, user_message, conversation_history, turn_number)
     tool_input = llm_call_with_tool(
         turn_prompt,
@@ -165,51 +170,37 @@ def process_turn(store: ChromaMemoryStore, user_message: str,
             new_content = new_content.strip()
             if target_id in store.memories:
                 store.memories[target_id].content = new_content
-                # Update in ChromaDB
                 try:
                     store.collection.update(ids=[target_id], documents=[new_content])
                 except Exception:
                     pass
                 print(f"  [UPDATED: {target_id} → \"{new_content[:80]}\"]")
 
-    # 2. Pre-retrieval planning
-    plan_prompt = build_pre_retrieval_prompt(user_message, store)
-    plan_response = llm_call(plan_prompt, system="You are a metacognitive pre-retrieval planner.")
-    plan = parse_retrieval_plan(plan_response)
-
-    # 3. Retrieve memories
-    retrieval_query = plan.get("retrieval_query", "")
-    retrieved = []
-    if plan.get("decision") == "RETRIEVE":
-        if retrieval_query:
-            retrieved = store.retrieve(query=retrieval_query, top_k=5)
-        elif plan.get("relevant_tags"):
-            retrieved = store.retrieve(query_tags=plan["relevant_tags"])
-        else:
-            retrieved = store.retrieve(query=user_message, top_k=5)
+    # 2. Hybrid Retrieval based on turn manager's tags and user query
+    # We skip the "Pre-Retrieval Planner" LLM call and use the Turn Manager's intent + query directly
+    retrieve_tags = ops.get("retrieve_tags", [])
+    retrieved = store.retrieve_hybrid(query=user_message, query_tags=retrieve_tags if retrieve_tags else None, top_k=5)
 
     if retrieved:
-        print(f"  [RETRIEVED: {len(retrieved)} memories, query=\"{(retrieval_query or user_message)[:60]}\"]")
+        print(f"  [RETRIEVED: {len(retrieved)} memories, tags={retrieve_tags}]")
 
-    # 4. Confidence assessment
+    # 3. Collapsed Assessment + Response (Single LLM Call)
     memory_context = format_memory_context(retrieved)
-    assess_prompt = build_post_retrieval_prompt(user_message, memory_context, plan)
-    tool_input = llm_call_with_tool(
-        assess_prompt,
-        tool=get_confidence_assessment_tool(),
-        system="You are a metacognitive confidence assessor."
+    collapsed_prompt = build_collapsed_prompt(user_message, memory_context)
+    
+    # Use the assess_and_respond tool
+    collapsed_output = llm_call_with_tool(
+        collapsed_prompt,
+        tool=get_collapsed_tool(),
+        system="You are a helpful AI assistant with calibrated metacognitive awareness."
     )
-    assessment = parse_structured_confidence(tool_input)
-    print(f"  [CONFIDENCE: {assessment['confidence']:.2f}, STATUS: {assessment['epistemic_status']}]")
+    
+    # Log the metadata we got back
+    confidence = collapsed_output.get("overall_confidence", 0.5)
+    status = collapsed_output.get("epistemic_status", "uncertain")
+    print(f"  [CONFIDENCE: {confidence:.2f}, STATUS: {status}]")
 
-    # 5. Generate response
-    response_prompt = build_response_prompt(user_message, memory_context, assessment)
-    response = llm_call(
-        response_prompt,
-        system="You are a helpful AI assistant with access to a memory system."
-    )
-
-    return response
+    return collapsed_output.get("response", "[No response generated]")
 
 
 def main():
